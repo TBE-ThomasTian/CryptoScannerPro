@@ -45,3 +45,6 @@ desktop.ini
 
 # Avalonia designer
 *.axaml.g.cs
+
+# Publish output
+LinuxPublish/
