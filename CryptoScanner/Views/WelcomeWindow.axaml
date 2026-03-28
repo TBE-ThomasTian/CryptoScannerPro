@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:CryptoScanner.Views"
+        x:Class="CryptoScanner.Views.WelcomeWindow"
+        Title="CryptoScanner"
+        Width="520" Height="720"
+        CanResize="True"
+        MinWidth="420" MinHeight="500"
+        WindowStartupLocation="CenterScreen"
+        Background="#0D1117">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#C9D1D9"/>
+        </Style>
+    </Window.Styles>
+
+    <Border Background="#0D1117" BorderBrush="#21262D" BorderThickness="1" ClipToBounds="True">
+        <Grid RowDefinitions="*,Auto">
+
+            <!-- Scrollable content: logo + title + disclaimer -->
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="36,28,36,12" Spacing="16" HorizontalAlignment="Center">
+
+                    <!-- Logo (smaller to save space) -->
+                    <Border CornerRadius="16" ClipToBounds="True" HorizontalAlignment="Center"
+                            BoxShadow="0 0 24 4 #4000D4AA">
+                        <Image Source="/Assets/logo.jpg" Width="120" Height="120"
+                               Stretch="UniformToFill"/>
+                    </Border>
+
+                    <!-- Title -->
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                        <TextBlock Text="CRYPTO SCANNER" FontSize="26" FontWeight="Bold"
+                                   HorizontalAlignment="Center" LetterSpacing="3">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                    <GradientStop Color="#00D4AA" Offset="0"/>
+                                    <GradientStop Color="#00F5C8" Offset="0.5"/>
+                                    <GradientStop Color="#3B82F6" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                        <TextBlock Text="Technische Analyse und Trading"
+                                   FontSize="11" Foreground="#484F58" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Disclaimer card -->
+                    <Border Background="#161B22" CornerRadius="10" Padding="16"
+                            BorderBrush="#21262D" BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="WICHTIGER HINWEIS" FontSize="13" FontWeight="Bold"
+                                       Foreground="#F0B90B" HorizontalAlignment="Center"/>
+
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8B949E" LineHeight="17"
+                                       TextAlignment="Center"
+                                       Text="Diese Software dient ausschliesslich zu Informations- und Unterhaltungszwecken. Die bereitgestellten Analysen, Signale und Empfehlungen stellen keine Anlageberatung dar."/>
+
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8B949E" LineHeight="17"
+                                       TextAlignment="Center"
+                                       Text="Der Handel mit Kryptowaehrungen ist mit erheblichen Risiken verbunden. Sie koennen Ihr gesamtes eingesetztes Kapital verlieren."/>
+
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8B949E" LineHeight="17"
+                                       TextAlignment="Center"
+                                       Text="Jegliche Haftung fuer finanzielle Verluste, die durch die Nutzung dieser Software entstehen, wird ausdruecklich ausgeschlossen."/>
+
+                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#F0B90B" LineHeight="17"
+                                       TextAlignment="Center" FontWeight="SemiBold"
+                                       Text="Handeln Sie stets eigenverantwortlich und investieren Sie nur Geld, dessen Verlust Sie sich leisten koennen."/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- FIXED bottom panel: checkbox + button — ALWAYS visible -->
+            <Border Grid.Row="1" Background="#0D1117" Padding="36,10,36,22"
+                    BorderBrush="#21262D" BorderThickness="0,1,0,0">
+                <StackPanel Spacing="14">
+                    <!-- Checkbox in a teal-bordered card -->
+                    <Border Background="#161B22" CornerRadius="8" Padding="14,10"
+                            BorderBrush="#00D4AA" BorderThickness="2" HorizontalAlignment="Stretch">
+                        <CheckBox x:Name="AcceptCheckBox" HorizontalAlignment="Center">
+                            <TextBlock Text="Ich habe den Hinweis gelesen und verstanden"
+                                       Foreground="#F0F6FC" FontSize="13" FontWeight="Bold"
+                                       TextWrapping="Wrap"/>
+                        </CheckBox>
+                    </Border>
+
+                    <!-- Weiter button -->
+                    <Button x:Name="ContinueButton"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Height="42"
+                            CornerRadius="10"
+                            IsEnabled="{Binding #AcceptCheckBox.IsChecked}"
+                            Click="OnContinueClick">
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                <GradientStop Color="#00D4AA" Offset="0"/>
+                                <GradientStop Color="#00B894" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Button.Background>
+                        <TextBlock Text="Weiter" FontSize="15" FontWeight="Bold" Foreground="#0D1117"/>
+                    </Button>
+
+                    <!-- Resize grip -->
+                    <TextBlock Text="..." FontSize="10" Foreground="#30363D"
+                               HorizontalAlignment="Right" Margin="0,-8,2,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

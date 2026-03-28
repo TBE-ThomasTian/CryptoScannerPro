@@ -1,0 +1,27 @@
+namespace CryptoScanner.Models;
+
+public class TradeOrder
+{
+    public string Symbol { get; set; } = string.Empty;
+    public TradeAction Action { get; set; }
+    public decimal Amount { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public decimal Confidence { get; set; }
+    public decimal CurrentPrice { get; set; }
+
+    public string ActionText => Action switch
+    {
+        TradeAction.Buy => "Kaufen",
+        TradeAction.Sell => "Verkaufen",
+        _ => "Halten"
+    };
+
+    public string ActionColor => Action switch
+    {
+        TradeAction.Buy => "#00D4AA",
+        TradeAction.Sell => "#FF4757",
+        _ => "#F0B90B"
+    };
+
+    public string ConfidenceFormatted => $"{Confidence * 100:N0}%";
+}

@@ -1,0 +1,785 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:CryptoScanner.Views"
+        xmlns:models="using:CryptoScanner.Models"
+        x:Class="CryptoScanner.Views.MainWindow"
+        Title="CryptoScanner"
+        Width="1500" Height="950"
+        MinWidth="1000" MinHeight="600"
+        Background="#0D1117"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <views:HexColorToBrushConverter x:Key="HexToBrush"/>
+        <views:InverseBoolConverter x:Key="InverseBool"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#C9D1D9"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#161B22"/>
+            <Setter Property="Foreground" Value="#C9D1D9"/>
+            <Setter Property="BorderBrush" Value="#30363D"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="#161B22"/>
+            <Setter Property="Foreground" Value="#C9D1D9"/>
+            <Setter Property="BorderBrush" Value="#30363D"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#21262D"/>
+            <Setter Property="Foreground" Value="#C9D1D9"/>
+            <Setter Property="BorderBrush" Value="#30363D"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="14,7"/>
+        </Style>
+        <Style Selector="Button:pointerover">
+            <Setter Property="Background" Value="#30363D"/>
+        </Style>
+        <Style Selector="Button.accent">
+            <Setter Property="Background" Value="#00D4AA"/>
+            <Setter Property="Foreground" Value="#0D1117"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.accent:pointerover">
+            <Setter Property="Background" Value="#00E8BB"/>
+        </Style>
+        <Style Selector="Button.sell">
+            <Setter Property="Background" Value="#FF4757"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.stop">
+            <Setter Property="Background" Value="#FF4757"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="#8B949E"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#0D1117"/>
+            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,8"/>
+        </Style>
+        <Style Selector="DataGridRow">
+            <Setter Property="Background" Value="#0D1117"/>
+        </Style>
+        <Style Selector="DataGridRow:nth-child(2n)">
+            <Setter Property="Background" Value="#0F1318"/>
+        </Style>
+        <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#161B22"/>
+        </Style>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#1C2333"/>
+        </Style>
+        <Style Selector="DataGridCell">
+            <Setter Property="Foreground" Value="#C9D1D9"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="12,6"/>
+        </Style>
+        <Style Selector="GridSplitter">
+            <Setter Property="Background" Value="#21262D"/>
+        </Style>
+        <Style Selector="GridSplitter:pointerover">
+            <Setter Property="Background" Value="#30363D"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- ═══ HEADER with TAB NAVIGATION ═══ -->
+        <Border Grid.Row="0" Background="#161B22" Padding="24,10" BorderBrush="#21262D" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="14">
+                    <Border Background="#00D4AA" CornerRadius="8" Width="36" Height="36" VerticalAlignment="Center">
+                        <TextBlock Text="CS" FontSize="14" FontWeight="Bold" Foreground="#0D1117"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="CryptoScanner" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Tab buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button Content="Scanner" Padding="16,6"
+                            Command="{Binding SelectTabCommand}" CommandParameter="0"
+                            Foreground="#F0F6FC" FontWeight="SemiBold"
+                            ToolTip.Tip="Krypto-Scanner und technische Analyse"/>
+                    <Button Content="Depot" Padding="16,6"
+                            Command="{Binding SelectTabCommand}" CommandParameter="1"
+                            Foreground="#F0F6FC"
+                            ToolTip.Tip="Paper-Trading Depot mit Positionen und Historie"/>
+                    <Button Content="KI-Trading" Padding="16,6"
+                            Command="{Binding SelectTabCommand}" CommandParameter="2"
+                            Foreground="#F0F6FC"
+                            ToolTip.Tip="KI-gestuetzte Handelsempfehlungen (ChatGPT/Claude)"/>
+                    <Button Content="Strategie" Padding="16,6"
+                            Command="{Binding SelectTabCommand}" CommandParameter="3"
+                            Foreground="#F0F6FC"
+                            ToolTip.Tip="Visueller Strategie-Editor (Blueprint-Stil)"/>
+                </StackPanel>
+
+                <!-- Language switcher + update time -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button Content="? Hilfe" Padding="10,5" FontSize="10"
+                            Command="{Binding OpenHelpCommand}"
+                            ToolTip.Tip="Kurze Erklaerung der wichtigsten Funktionen"/>
+                    <ComboBox ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding SelectedLanguage}"
+                              Width="55" Height="26" FontSize="10" VerticalAlignment="Center"
+                              ToolTip.Tip="Sprache / Language"/>
+                    <TextBlock Text="{Binding LastUpdateTime, StringFormat=Update: {0}}"
+                               FontSize="11" Foreground="#484F58" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═══ TOOLBAR (Scanner only) ═══ -->
+        <Border Grid.Row="1" Background="#0D1117" Padding="16,8" BorderBrush="#21262D" BorderThickness="0,0,0,1"
+                IsVisible="{Binding IsTabScanner}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="accent" Command="{Binding ScanCommand}"
+                        IsVisible="{Binding IsScanning, Converter={StaticResource InverseBool}}"
+                        ToolTip.Tip="Alle Coins scannen und technisch analysieren">
+                    <TextBlock Text="Scan Starten" Foreground="#0D1117" FontWeight="SemiBold"/>
+                </Button>
+                <Button Classes="stop" Command="{Binding StopScanCommand}" IsVisible="{Binding IsScanning}"
+                        ToolTip.Tip="Laufenden Scan abbrechen">
+                    <TextBlock Text="Abbrechen" Foreground="White"/>
+                </Button>
+                <Border Width="1" Background="#21262D" Margin="2,0"/>
+                <ComboBox ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding SelectedCurrency}" Width="65"
+                          ToolTip.Tip="Handelswaehrung auswaehlen (USD oder EUR)"/>
+                <TextBox Watermark="Suchen..." Text="{Binding SearchText}" Width="150" Height="32"
+                         ToolTip.Tip="Nach Coin-Name oder Symbol suchen"/>
+                <Border Width="1" Background="#21262D" Margin="2,0"/>
+                <ComboBox ItemsSource="{Binding FilterOptions}" SelectedItem="{Binding SelectedFilter}" Width="110"
+                          ToolTip.Tip="Nur Coins mit bestimmtem Signal anzeigen"/>
+                <ComboBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}" Width="80"
+                          ToolTip.Tip="Tabelle nach gewaehltem Kriterium sortieren"/>
+                <Button Command="{Binding ToggleSortDirectionCommand}" Padding="6,5" Content="A/Z" FontSize="10"
+                        ToolTip.Tip="Sortierrichtung umkehren (aufsteigend/absteigend)"/>
+                <Border Width="1" Background="#21262D" Margin="2,0"/>
+                <ComboBox ItemsSource="{Binding TimeframeOptions}" SelectedItem="{Binding SelectedTimeframe}" Width="95"
+                          ToolTip.Tip="Zeitraum fuer Diagramm und technische Analyse. Beim Wechsel wird automatisch neu gescannt."/>
+                <CheckBox Content="Auto" IsChecked="{Binding IsAutoRefreshEnabled}" VerticalAlignment="Center"
+                          ToolTip.Tip="Automatisch in regelmaessigen Abstaenden neu scannen"/>
+                <ComboBox ItemsSource="{Binding IntervalOptions}" SelectedItem="{Binding SelectedInterval}" Width="70"
+                          ToolTip.Tip="Intervall fuer automatische Aktualisierung"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══ MAIN CONTENT ═══ -->
+        <Grid Grid.Row="2">
+
+            <!-- ──────── TAB 0: SCANNER ──────── -->
+            <Grid IsVisible="{Binding IsTabScanner}" ColumnDefinitions="2*,5,*">
+                <Grid Grid.Column="0" MinWidth="400" RowDefinitions="Auto,*">
+                    <Border Grid.Row="0" IsVisible="{Binding IsScanning}" Background="#161B22" Padding="12,8">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="#8B949E"/>
+                            <ProgressBar Minimum="0" Maximum="{Binding ScanTotal}" Value="{Binding ScanProgress}"
+                                         Height="3" Foreground="#00D4AA" Background="#21262D"/>
+                        </StackPanel>
+                    </Border>
+
+                    <DataGrid Grid.Row="1" x:Name="CoinGrid"
+                              ItemsSource="{Binding Coins}" SelectedItem="{Binding SelectedCoin}"
+                              AutoGenerateColumns="False" CanUserResizeColumns="True"
+                              IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
+                              Background="#0D1117" HeadersVisibility="Column" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="COIN" Binding="{Binding DisplayName}" Width="100"/>
+                            <DataGridTextColumn Header="PREIS" Binding="{Binding PriceFormatted}" Width="140"/>
+                            <DataGridTemplateColumn Header="24H %" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Change24hFormatted}"
+                                                   Foreground="{Binding Change24hColor, Converter={StaticResource HexToBrush}}"
+                                                   VerticalAlignment="Center" Margin="12,0" FontWeight="SemiBold"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="SCORE" Binding="{Binding ScoreFormatted}" Width="75"/>
+                            <DataGridTemplateColumn Header="SIGNAL" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding SignalColor, Converter={StaticResource HexToBrush}}"
+                                                CornerRadius="10" Padding="8,3" Margin="4,2" HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding SignalText}" Foreground="#0D1117" FontWeight="Bold" FontSize="10"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="MEINE STRATEGIE" Width="170">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StrategyAction}"
+                                                   Foreground="{Binding StrategyActionColor, Converter={StaticResource HexToBrush}}"
+                                                   FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" Margin="8,0"
+                                                   ToolTip.Tip="Das sagt deine aktuell aktive Strategie zu diesem Coin, unabhaengig vom Scanner-Signal."/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="" Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Classes="accent" Padding="6,3" FontSize="10"
+                                                Command="{Binding $parent[Window].DataContext.OpenBuyDialogCommand}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip.Tip="Diese Kryptowaehrung zum aktuellen Preis kaufen">
+                                            <TextBlock Text="Kaufen" Foreground="#0D1117" FontSize="10"/>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <GridSplitter Grid.Column="1" ResizeDirection="Columns" IsVisible="{Binding ShowDetailPanel}"/>
+
+                <!-- Detail panel -->
+                <Border Grid.Column="2" MinWidth="300" IsVisible="{Binding ShowDetailPanel}"
+                        Background="#0D1117" BorderBrush="#21262D" BorderThickness="1,0,0,0">
+                    <Grid RowDefinitions="Auto,*">
+                        <Button Grid.Row="0" Content="X" Padding="6,3" FontSize="11"
+                                HorizontalAlignment="Right" Margin="0,8,12,0"
+                                Command="{Binding CloseDetailCommand}"/>
+                        <ScrollViewer Grid.Row="1">
+                            <ContentControl Content="{Binding SelectedCoin}">
+                                <ContentControl.ContentTemplate>
+                                    <DataTemplate DataType="models:CryptoCoin">
+                                        <Grid RowDefinitions="Auto,Auto,*,5,*" Margin="16,0,16,16">
+                                            <!-- Row 0: Header -->
+                                            <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,8">
+                                                <TextBlock Text="{Binding DisplayName}" FontSize="22" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                                                    <TextBlock Text="{Binding PriceFormatted}" FontSize="24" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                                    <TextBlock Text="{Binding Change24hFormatted}" FontWeight="Bold" FontSize="13"
+                                                               Foreground="{Binding Change24hColor, Converter={StaticResource HexToBrush}}"
+                                                               VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Row 1: Chart toggles -->
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,2,0,4">
+                                                <CheckBox Content="Kerzen" FontSize="10" Foreground="#F0F6FC"
+                                                          IsChecked="{Binding $parent[Window].DataContext.ShowCandlesticks}"
+                                                          ToolTip.Tip="Zwischen Linien- und Kerzenchart umschalten"/>
+                                                <CheckBox Content="SMA 20" FontSize="10" Foreground="#3B82F6"
+                                                          IsChecked="{Binding $parent[Window].DataContext.ShowSma20}"
+                                                          ToolTip.Tip="Simple Moving Average 20 Perioden (kurzfristig)"/>
+                                                <CheckBox Content="SMA 50" FontSize="10" Foreground="#F59E0B"
+                                                          IsChecked="{Binding $parent[Window].DataContext.ShowSma50}"
+                                                          ToolTip.Tip="Simple Moving Average 50 Perioden (mittelfristig)"/>
+                                                <CheckBox Content="EMA 12" FontSize="10" Foreground="#06B6D4"
+                                                          IsChecked="{Binding $parent[Window].DataContext.ShowEma12}"
+                                                          ToolTip.Tip="Exponential Moving Average 12 Perioden"/>
+                                                <CheckBox Content="EMA 26" FontSize="10" Foreground="#D946EF"
+                                                          IsChecked="{Binding $parent[Window].DataContext.ShowEma26}"
+                                                          ToolTip.Tip="Exponential Moving Average 26 Perioden"/>
+                                                <CheckBox Content="BB" FontSize="10" Foreground="#A78BFA"
+                                                          IsChecked="{Binding $parent[Window].DataContext.ShowBollingerBands}"
+                                                          ToolTip.Tip="Bollinger Baender (20 Perioden, 2 Std.abw.)"/>
+                                            </StackPanel>
+
+                                            <Border Grid.Row="2" Background="#161B22" CornerRadius="8" Padding="2" BorderBrush="#21262D" BorderThickness="1" MinHeight="150">
+                                                <views:PriceChartControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                                    Candles="{Binding OhlcData}"
+                                                    CurrencySymbol="{Binding CurrencySymbol}"
+                                                    Sma20="{Binding Indicators.Sma20}" Sma50="{Binding Indicators.Sma50}"
+                                                    ShowCandlesticks="{Binding $parent[Window].DataContext.ShowCandlesticks}"
+                                                    ShowSma20="{Binding $parent[Window].DataContext.ShowSma20}"
+                                                    ShowSma50="{Binding $parent[Window].DataContext.ShowSma50}"
+                                                    ShowEma12="{Binding $parent[Window].DataContext.ShowEma12}"
+                                                    ShowEma26="{Binding $parent[Window].DataContext.ShowEma26}"
+                                                    ShowBollingerBands="{Binding $parent[Window].DataContext.ShowBollingerBands}"/>
+                                            </Border>
+
+                                            <!-- Row 3: Splitter -->
+                                            <GridSplitter Grid.Row="3" ResizeDirection="Rows"
+                                                          Background="#21262D" Height="5"/>
+
+                                            <!-- Row 4: Indicators + details (scrollable) -->
+                                            <ScrollViewer Grid.Row="4">
+                                            <StackPanel Spacing="12" Margin="0,4,0,0">
+                                            <Border Background="#161B22" CornerRadius="8" Padding="14" BorderBrush="#21262D" BorderThickness="1">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <StackPanel>
+                                                        <TextBlock Text="Bewertung" FontSize="11" Foreground="#8B949E"/>
+                                                        <TextBlock Text="{Binding ScoreFormatted}" FontSize="30" FontWeight="Bold"
+                                                                   Foreground="{Binding SignalColor, Converter={StaticResource HexToBrush}}"/>
+                                                    </StackPanel>
+                                                    <Border Grid.Column="1" Background="{Binding SignalColor, Converter={StaticResource HexToBrush}}"
+                                                            CornerRadius="8" Padding="12,6" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding SignalText}" Foreground="#0D1117" FontWeight="Bold" FontSize="12"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Order Book / Kauf-Verkaufsdruck -->
+                                            <Border Background="#161B22" CornerRadius="8" Padding="14" BorderBrush="#21262D" BorderThickness="1"
+                                                    IsVisible="{Binding OrderBook, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="Orderbuch (Kauf-/Verkaufsdruck)" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
+                                                    <Grid ColumnDefinitions="*,Auto,*">
+                                                        <TextBlock Text="{Binding OrderBook.BidPercentFormatted, StringFormat=Kaeufer {0}}"
+                                                                   Foreground="#00D4AA" FontWeight="Bold" FontSize="12"/>
+                                                        <TextBlock Grid.Column="1" Text="|" Foreground="#21262D" Margin="6,0"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding OrderBook.AskPercentFormatted, StringFormat=Verkaeufer {0}}"
+                                                                   Foreground="#FF4757" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
+                                                    </Grid>
+                                                    <!-- Bid/Ask bar -->
+                                                    <Grid ColumnDefinitions="*,*" Height="8">
+                                                        <Border Grid.Column="0" Background="#00D4AA" CornerRadius="4,0,0,4"
+                                                                HorizontalAlignment="Stretch"/>
+                                                        <Border Grid.Column="1" Background="#FF4757" CornerRadius="0,4,4,0"
+                                                                HorizontalAlignment="Stretch"/>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding OrderBook.PressureLabel}"
+                                                               Foreground="{Binding OrderBook.PressureColor, Converter={StaticResource HexToBrush}}"
+                                                               FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Background="#161B22" CornerRadius="8" Padding="14" BorderBrush="#21262D" BorderThickness="1"
+                                                    IsVisible="{Binding Indicators, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="{Binding Indicators.PeriodLabel, StringFormat={}{0} Preisspanne}" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
+                                                    <Grid ColumnDefinitions="*,*">
+                                                        <TextBlock Text="{Binding Indicators.PeriodHighFormatted, StringFormat=Hoch: {0}}" Foreground="#00D4AA" FontSize="12"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Indicators.PeriodLowFormatted, StringFormat=Tief: {0}}" Foreground="#FF4757" FontSize="12" HorizontalAlignment="Right"/>
+                                                    </Grid>
+                                                    <Border Height="5" CornerRadius="3">
+                                                        <Border.Background>
+                                                            <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                                                <GradientStop Color="#FF4757" Offset="0"/>
+                                                                <GradientStop Color="#F0B90B" Offset="0.5"/>
+                                                                <GradientStop Color="#00D4AA" Offset="1"/>
+                                                            </LinearGradientBrush>
+                                                        </Border.Background>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding Indicators.PeriodRangePercentFormatted, StringFormat=Position: {0}}" HorizontalAlignment="Center" Foreground="#8B949E" FontSize="11"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Background="#161B22" CornerRadius="8" Padding="14" BorderBrush="#21262D" BorderThickness="1"
+                                                    IsVisible="{Binding Indicators, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Technische Indikatoren" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
+                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="Relative Strength Index (14 Perioden)&#10;&lt; 30 = Ueberverkauft (Kaufsignal)&#10;&gt; 70 = Ueberkauft (Verkaufssignal)">
+                                                        <TextBlock Text="RSI (14)" Foreground="#C9D1D9" FontSize="12"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Indicators.Rsi14, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="#F0F6FC" FontSize="12"/>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding Indicators.RsiSignal}" FontSize="10" Foreground="#00D4AA"/>
+                                                    <Border Height="1" Background="#21262D"/>
+                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="Moving Average Convergence Divergence&#10;Positiv = Aufwaertstrend, Negativ = Abwaertstrend">
+                                                        <TextBlock Text="MACD" Foreground="#C9D1D9" FontSize="12"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Indicators.MacdSignalText}" FontSize="10" FontWeight="Bold" Foreground="#3B82F6"/>
+                                                    </Grid>
+                                                    <Border Height="1" Background="#21262D"/>
+                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="Simple Moving Average&#10;SMA20 = kurzfristiger Durchschnitt&#10;SMA50 = mittelfristiger Durchschnitt&#10;SMA20 &gt; SMA50 = Golden Cross (bullisch)">
+                                                        <TextBlock Text="SMA 20/50" Foreground="#C9D1D9" FontSize="12"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Indicators.SmaSignal}" FontSize="10" FontWeight="Bold" Foreground="#F59E0B"/>
+                                                    </Grid>
+                                                    <Border Height="1" Background="#21262D"/>
+                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="Bollinger Band (20 Perioden, 2 Std.abw.)&#10;Nahe oberem Band = moeglicherweise ueberkauft&#10;Nahe unterem Band = moeglicherweise ueberverkauft">
+                                                        <TextBlock Text="Bollinger" Foreground="#C9D1D9" FontSize="12"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Indicators.BollingerSignal}" FontSize="10" FontWeight="Bold" Foreground="#A78BFA"/>
+                                                    </Grid>
+                                                    <Border Height="1" Background="#21262D"/>
+                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="Handelsvolumen im Vergleich zum 20-Perioden-Durchschnitt">
+                                                        <TextBlock Text="Volumen" Foreground="#C9D1D9" FontSize="12"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Indicators.VolumeSignal}" FontSize="10" FontWeight="Bold" Foreground="#8B949E"/>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                        </ScrollViewer>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ContentControl.ContentTemplate>
+                            </ContentControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ──────── TAB 1: DEPOT ──────── -->
+            <ScrollViewer IsVisible="{Binding IsTabDepot}">
+                <StackPanel Margin="24,16" Spacing="16" MaxWidth="1200">
+
+                    <!-- Portfolio Summary -->
+                    <Border Background="#161B22" CornerRadius="10" Padding="20" BorderBrush="#21262D" BorderThickness="1">
+                        <StackPanel Spacing="14">
+                            <Grid ColumnDefinitions="*,*,*,*">
+                                <StackPanel>
+                                    <TextBlock Text="Kontostand" FontSize="11" Foreground="#8B949E" ToolTip.Tip="Verfuegbares Barguthaben fuer neue Kaeufe"/>
+                                    <TextBlock Text="{Binding Portfolio.BalanceFormatted}" FontSize="22" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Gesamtwert" FontSize="11" Foreground="#8B949E" ToolTip.Tip="Barguthaben + Wert aller gehaltenen Positionen"/>
+                                    <TextBlock Text="{Binding Portfolio.TotalValueFormatted}" FontSize="22" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Gewinn/Verlust" FontSize="11" Foreground="#8B949E" ToolTip.Tip="Gesamtgewinn oder -verlust seit Depotstart"/>
+                                    <TextBlock Text="{Binding Portfolio.ProfitLossFormatted}" FontSize="22" FontWeight="Bold"
+                                               Foreground="{Binding Portfolio.ProfitLossColor, Converter={StaticResource HexToBrush}}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="Rendite" FontSize="11" Foreground="#8B949E" ToolTip.Tip="Prozentuale Rendite seit Depotstart"/>
+                                    <TextBlock Text="{Binding Portfolio.ProfitLossPercentFormatted}" FontSize="22" FontWeight="Bold"
+                                               Foreground="{Binding Portfolio.ProfitLossColor, Converter={StaticResource HexToBrush}}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Border Height="1" Background="#21262D"/>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Startkapital" FontSize="11" Foreground="#8B949E" ToolTip.Tip="Anfangskapital fuer das Uebungsdepot eingeben"/>
+                                    <TextBox Text="{Binding StartingBalanceInput}" Width="140" Height="32"
+                                             IsEnabled="{Binding CanEditStartingBalance}"
+                                             Watermark="z.B. 10000"
+                                             ToolTip.Tip="Startkapital fuer dein Paper-Trading-Depot"/>
+                                </StackPanel>
+                                <Button Content="Depot Zuruecksetzen" Padding="12,6" FontSize="11"
+                                        Command="{Binding ResetPortfolioCommand}" VerticalAlignment="Bottom" Margin="0,0,0,1"
+                                        ToolTip.Tip="Alle Positionen und Transaktionen loeschen und mit neuem Startkapital beginnen"/>
+                                <TextBlock Text="Setzt alle Positionen und Transaktionen zurueck."
+                                           FontSize="10" Foreground="#484F58" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Positions -->
+                    <TextBlock Text="Positionen" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <Border Background="#161B22" CornerRadius="10" Padding="4" BorderBrush="#21262D" BorderThickness="1">
+                        <DataGrid ItemsSource="{Binding Portfolio.Positions}" AutoGenerateColumns="False"
+                                  IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
+                                  Background="#161B22" HeadersVisibility="Column" SelectionMode="Single" MaxHeight="300">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="COIN" Binding="{Binding Symbol}" Width="100"/>
+                                <DataGridTextColumn Header="MENGE" Binding="{Binding AmountFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="KAUFPREIS" Binding="{Binding AvgPriceFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="KURS" Binding="{Binding CurrentPriceFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="WERT" Binding="{Binding TotalValueFormatted}" Width="120"/>
+                                <DataGridTemplateColumn Header="G/V" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ProfitLossPercentFormatted}"
+                                                       Foreground="{Binding ProfitLossColor, Converter={StaticResource HexToBrush}}"
+                                                       FontWeight="Bold" VerticalAlignment="Center" Margin="12,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Classes="sell" Padding="6,3" FontSize="10"
+                                                    Command="{Binding $parent[Window].DataContext.OpenSellDialogCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="Verkaufsfenster fuer diese Position oeffnen">
+                                                <TextBlock Text="Verkaufen" Foreground="White" FontSize="10"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <!-- Transaction History -->
+                    <TextBlock Text="Transaktionshistorie" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <Border Background="#161B22" CornerRadius="10" Padding="4" BorderBrush="#21262D" BorderThickness="1">
+                        <DataGrid ItemsSource="{Binding Portfolio.TransactionHistory}" AutoGenerateColumns="False"
+                                  IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
+                                  Background="#161B22" HeadersVisibility="Column" MaxHeight="300">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="DATUM" Binding="{Binding TimestampFormatted}" Width="140"/>
+                                <DataGridTextColumn Header="COIN" Binding="{Binding Symbol}" Width="80"/>
+                                <DataGridTemplateColumn Header="TYP" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding TypeText}"
+                                                       Foreground="{Binding TypeColor, Converter={StaticResource HexToBrush}}"
+                                                       FontWeight="Bold" VerticalAlignment="Center" Margin="12,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="MENGE" Binding="{Binding AmountFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="PREIS" Binding="{Binding PriceFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="GESAMT" Binding="{Binding TotalFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="QUELLE" Binding="{Binding Source}" Width="100"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ──────── TAB 2: KI-TRADING ──────── -->
+            <ScrollViewer IsVisible="{Binding IsTabAi}">
+                <StackPanel Margin="24,16" Spacing="16" MaxWidth="1200">
+
+                    <!-- AI Settings -->
+                    <Border Background="#161B22" CornerRadius="10" Padding="20" BorderBrush="#21262D" BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="KI-Trading Einstellungen" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Anbieter" FontSize="11" Foreground="#8B949E" ToolTip.Tip="KI-Anbieter fuer automatische Handelsempfehlungen"/>
+                                    <ComboBox ItemsSource="{Binding AiProviderOptions}" SelectedItem="{Binding AiProvider}" Width="120"
+                                              ToolTip.Tip="Welcher KI-Anbieter fuer Empfehlungen genutzt werden soll"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="API-Schluessel" FontSize="11" Foreground="#8B949E" ToolTip.Tip="API-Schluessel fuer den gewaehlten KI-Anbieter (wird verschluesselt gespeichert)"/>
+                                    <TextBox Text="{Binding AiApiKey}" Width="300" PasswordChar="*"
+                                             ToolTip.Tip="API-Schluessel fuer den gewaehlten KI-Anbieter"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="API-URL" FontSize="11" Foreground="#8B949E" ToolTip.Tip="API-Endpunkt URL (Standard wird automatisch gesetzt)"/>
+                                    <TextBox Text="{Binding AiApiUrl}" Width="350"
+                                             ToolTip.Tip="API-Endpunkt des KI-Anbieters"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
+                                <Button Classes="accent" Command="{Binding RunAiAnalysisCommand}"
+                                        ToolTip.Tip="Erstellt neue Empfehlungen aus den aktuellen Scan-Daten">
+                                    <TextBlock Text="KI-Analyse Starten" Foreground="#0D1117" FontWeight="SemiBold"/>
+                                </Button>
+                                <Button Content="Alle Ausfuehren" Command="{Binding ExecuteAllAiOrdersCommand}" Padding="12,7"
+                                        ToolTip.Tip="Fuehrt alle angezeigten KI-Empfehlungen als Paper-Trades aus"/>
+                                <CheckBox Content="Auto-Trading (nach Scan)" IsChecked="{Binding AiAutoTrading}" VerticalAlignment="Center"
+                                          ToolTip.Tip="KI handelt automatisch nach jedem Scan basierend auf den Empfehlungen"/>
+                                <TextBlock Text="{Binding AiStatusText}" VerticalAlignment="Center" Foreground="#8B949E" FontSize="12"/>
+                            </StackPanel>
+                            <TextBlock Text="Ohne API-Schluessel wird der regelbasierte Modus verwendet (technische Indikatoren)."
+                                       FontSize="11" Foreground="#484F58" FontStyle="Italic"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- AI Recommendations -->
+                    <TextBlock Text="KI-Empfehlungen" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <Border Background="#161B22" CornerRadius="10" Padding="4" BorderBrush="#21262D" BorderThickness="1">
+                        <DataGrid ItemsSource="{Binding AiRecommendations}" AutoGenerateColumns="False"
+                                  IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
+                                  Background="#161B22" HeadersVisibility="Column" MaxHeight="350">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="COIN" Binding="{Binding Symbol}" Width="100"/>
+                                <DataGridTemplateColumn Header="AKTION" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ActionText}"
+                                                       Foreground="{Binding ActionColor, Converter={StaticResource HexToBrush}}"
+                                                       FontWeight="Bold" VerticalAlignment="Center" Margin="12,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="MENGE" Binding="{Binding Amount, StringFormat={}{0:N6}}" Width="120"/>
+                                <DataGridTextColumn Header="KONFIDENZ" Binding="{Binding ConfidenceFormatted}" Width="90"/>
+                                <DataGridTextColumn Header="BEGRUENDUNG" Binding="{Binding Reason}" Width="*"/>
+                                <DataGridTemplateColumn Header="" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Classes="accent" Padding="6,3" FontSize="10"
+                                                    Command="{Binding $parent[Window].DataContext.ExecuteAiOrderCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <TextBlock Text="Ausfuehren" Foreground="#0D1117" FontSize="10"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <!-- AI Log -->
+                    <TextBlock Text="KI-Protokoll" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <Border Background="#161B22" CornerRadius="10" Padding="14" BorderBrush="#21262D" BorderThickness="1"
+                            MaxHeight="250">
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding AiLog}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontSize="11" Foreground="#8B949E" Margin="0,1"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ──────── TAB 3: STRATEGIE ──────── -->
+            <Grid IsVisible="{Binding IsTabStrategy}" ColumnDefinitions="280,*" RowDefinitions="Auto,2*,5,*">
+
+                <!-- Strategy Toolbar -->
+                <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#161B22" Padding="12,8" BorderBrush="#21262D" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox Text="{Binding CurrentStrategy.Name}" Width="160" Height="32" Watermark="Strategie-Name"
+                                 ToolTip.Tip="Name deiner aktuellen Strategie"/>
+
+                        <!-- Add block dropdown buttons -->
+                        <TextBlock Text="Bedingung:" Foreground="#8B949E" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <Button Content="RSI" Padding="6,4" FontSize="10" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Condition|RSI" ToolTip.Tip="RSI-Bedingung (z.B. RSI &lt; 30 = ueberverkauft)"/>
+                        <Button Content="MACD" Padding="6,4" FontSize="10" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Condition|MACD" ToolTip.Tip="MACD-Bedingung (Signal, Kreuzung)"/>
+                        <Button Content="SMA" Padding="6,4" FontSize="10" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Condition|SMA" ToolTip.Tip="Preisvergleich mit Simple Moving Average"/>
+                        <Button Content="EMA" Padding="6,4" FontSize="10" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Condition|EMA" ToolTip.Tip="Preisvergleich mit Exponential Moving Average"/>
+                        <Button Content="BB" Padding="6,4" FontSize="10" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Condition|Bollinger" ToolTip.Tip="Bollinger-Band-Bedingung"/>
+                        <Button Content="Vol" Padding="6,4" FontSize="10" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Condition|Volumen" ToolTip.Tip="Volumen-Bedingung (ueber/unter Durchschnitt)"/>
+                        <Button Content="Score" Padding="6,4" FontSize="10" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Condition|Score" ToolTip.Tip="Composite-Score-Bedingung"/>
+
+                        <Border Width="1" Background="#21262D" Margin="2,0"/>
+                        <TextBlock Text="Aktion:" Foreground="#8B949E" FontSize="11" VerticalAlignment="Center"/>
+                        <Button Content="Kaufen" Padding="6,4" FontSize="10" Foreground="#00D4AA" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Buy|" ToolTip.Tip="Kaufaktion hinzufuegen (Prozent des Guthabens)"/>
+                        <Button Content="Verkaufen" Padding="6,4" FontSize="10" Foreground="#FF4757" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Sell|" ToolTip.Tip="Verkaufaktion hinzufuegen (Prozent der Position)"/>
+                        <Button Content="Halten" Padding="6,4" FontSize="10" Foreground="#F0B90B" Command="{Binding AddStrategyBlockCommand}" CommandParameter="Hold|" ToolTip.Tip="Halteaktion hinzufuegen (keine Transaktion)"/>
+
+                        <Border Width="1" Background="#21262D" Margin="2,0"/>
+                        <Button Classes="accent" Content="Speichern" Padding="8,4" FontSize="10" Command="{Binding SaveStrategyCommand}" ToolTip.Tip="Aktuelle Strategie als JSON speichern"/>
+                        <Button Content="Neu" Padding="8,4" FontSize="10" Command="{Binding NewStrategyCommand}" ToolTip.Tip="Neue Strategie mit RSI-Momentum-Vorlage erstellen"/>
+                        <Button Classes="accent" Content="Testen" Padding="8,4" FontSize="10" Command="{Binding TestStrategyCommand}" ToolTip.Tip="Strategie gegen aktuelle Scan-Daten testen (kein echter Handel)"/>
+                        <Button Content="Zentrieren" Padding="8,4" FontSize="10" x:Name="FitToViewBtn"
+                                ToolTip.Tip="Alle Bloecke in der Ansicht zentrieren und einpassen"/>
+                        <Button Content="Loeschen" Padding="8,4" FontSize="10" Foreground="#FF4757" x:Name="DeleteBlockBtn"
+                                ToolTip.Tip="Ausgewaehlten Block loeschen (oder Delete-Taste)"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Strategy Sidebar -->
+                <Border Grid.Row="1" Grid.Column="0" Background="#161B22" Padding="12" BorderBrush="#21262D" BorderThickness="0,0,1,0">
+                    <ScrollViewer>
+                        <StackPanel Spacing="12">
+                            <Border Background="#0D1117" CornerRadius="10" Padding="12" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Ausfuehrung" FontSize="13" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Steuert, wann deine Strategie auf das Fake-Depot angewendet wird." FontSize="11" Foreground="#8B949E" TextWrapping="Wrap"/>
+                                    <Button Classes="accent" Content="Jetzt auf Fake-Depot anwenden" Padding="8,6" FontSize="10"
+                                            Command="{Binding ApplyStrategyToPaperPortfolioCommand}"
+                                            ToolTip.Tip="Fuehrt die aktuelle Strategie sofort einmal als Paper-Trades auf deinem Fake-Depot aus"/>
+                                    <CheckBox Content="Nach jedem Scan automatisch handeln" IsChecked="{Binding StrategyAutoApplyToPaperPortfolio}"
+                                              Foreground="#8B949E"
+                                              ToolTip.Tip="Fuehrt die aktive Strategie nach jedem Scan automatisch auf dem Fake-Depot aus"/>
+                                    <CheckBox Content="Strategie automatisch berechnen" IsChecked="{Binding CurrentStrategy.IsActive}" Foreground="#8B949E"
+                                              ToolTip.Tip="Berechnet die Strategie nach jedem Scan automatisch fuer alle Coins"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="12" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Preset" FontSize="13" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Waehlt schnell zwischen strengen oder lockeren Kaufregeln." FontSize="11" Foreground="#8B949E" TextWrapping="Wrap"/>
+                                    <ComboBox ItemsSource="{Binding StrategyFilterPresets}" SelectedItem="{Binding SelectedStrategyFilterPreset}"
+                                              Width="160" FontSize="10"
+                                              ToolTip.Tip="Filter-Voreinstellung fuer Strategiekaeufe"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="12" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Kauffilter" FontSize="13" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Begrenzt Strategie-Kaeufe auf bessere Coin-Kandidaten." FontSize="11" Foreground="#8B949E" TextWrapping="Wrap"/>
+                                    <CheckBox Content="+24h" IsChecked="{Binding StrategyRequirePositiveDayChange}" Foreground="#8B949E"
+                                              ToolTip.Tip="Kauft nur Coins mit positiver 24h-Entwicklung"/>
+                                    <CheckBox Content="Ueber SMA50" IsChecked="{Binding StrategyRequireAboveSma50}" Foreground="#8B949E"
+                                              ToolTip.Tip="Kauft nur Coins, deren aktueller Preis ueber dem SMA50 liegt"/>
+                                    <CheckBox Content="MACD positiv" IsChecked="{Binding StrategyRequirePositiveMacd}" Foreground="#8B949E"
+                                              ToolTip.Tip="Kauft nur Coins mit positivem MACD-Histogramm"/>
+                                    <CheckBox Content="Score >= 40" IsChecked="{Binding StrategyRequireMinScore40}" Foreground="#8B949E"
+                                              ToolTip.Tip="Kauft nur Coins mit einem Composite-Score von mindestens 40"/>
+                                    <CheckBox Content="Volumen hoch" IsChecked="{Binding StrategyRequireAboveAverageVolume}" Foreground="#8B949E"
+                                              ToolTip.Tip="Kauft nur Coins mit ueberdurchschnittlichem Volumen"/>
+                                    <CheckBox Content="Keine Doppelkaeufe" IsChecked="{Binding StrategySkipExistingPositions}" Foreground="#8B949E"
+                                              ToolTip.Tip="Kauft keine Coins nach, die bereits im Fake-Depot vorhanden sind"/>
+                                    <CheckBox Content="Top 3 Score" IsChecked="{Binding StrategyPreferTopScoreBuys}" Foreground="#8B949E"
+                                              ToolTip.Tip="Begrenzt Kaeufe auf die drei besten Coin-Kandidaten nach Score"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- Strategy Canvas -->
+                <Border Grid.Row="1" Grid.Column="1" Background="#0D1117" MinHeight="200">
+                    <views:StrategyEditorControl x:Name="StrategyEditor" Strategy="{Binding CurrentStrategy}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                </Border>
+
+                <!-- Splitter between canvas and results -->
+                <GridSplitter Grid.Row="2" Grid.ColumnSpan="2" ResizeDirection="Rows" Background="#21262D"/>
+
+                <!-- Strategy Results + Log -->
+                <Border Grid.Row="3" Grid.ColumnSpan="2" Background="#161B22" Padding="12" BorderBrush="#21262D" BorderThickness="0,1,0,0"
+                        MinHeight="150">
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,*">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Strategie-Ergebnisse" FontSize="12" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                            <TextBlock Text="{Binding StrategyStatusText}" FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
+                            <Button Content="Alle ausfuehren" Padding="6,3" FontSize="9" Command="{Binding ExecuteAllStrategyOrdersCommand}"
+                                    ToolTip.Tip="Fuehrt alle vorgeschlagenen Strategie-Trades als Paper-Trades aus"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="Protokoll" FontSize="12" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+
+                        <DataGrid Grid.Row="1" Grid.Column="0" ItemsSource="{Binding StrategyResults}"
+                                  AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="None"
+                                  BorderThickness="0" Background="#161B22" HeadersVisibility="Column"
+                                  Margin="0,4,4,0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="COIN" Binding="{Binding Symbol}" Width="80"/>
+                                <DataGridTemplateColumn Header="AKTION" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ActionText}"
+                                                       Foreground="{Binding ActionColor, Converter={StaticResource HexToBrush}}"
+                                                       FontWeight="Bold" VerticalAlignment="Center" Margin="8,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="MENGE" Binding="{Binding Amount, StringFormat={}{0:N6}}" Width="100"/>
+                                <DataGridTextColumn Header="GRUND" Binding="{Binding Reason}" Width="*"/>
+                                <DataGridTemplateColumn Header="" Width="70">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Classes="accent" Padding="4,2" FontSize="9"
+                                                    Command="{Binding $parent[Window].DataContext.ExecuteStrategyOrderCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <TextBlock Text="Ausfuehren" Foreground="#0D1117" FontSize="9"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <Border Grid.Row="1" Grid.Column="1" Margin="4,4,0,0">
+                            <ScrollViewer>
+                                <ItemsControl ItemsSource="{Binding StrategyLog}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" FontSize="10" Foreground="#8B949E" Margin="0,1"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Load saved strategies -->
+                <Border Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Right" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <ComboBox ItemsSource="{Binding SavedStrategyNames}" Width="130" Height="28" FontSize="10"
+                                  x:Name="StrategyLoadCombo"
+                                  ToolTip.Tip="Gespeicherte Strategie zum Laden auswaehlen"/>
+                        <Button Content="Laden" Padding="6,3" FontSize="10"
+                                Command="{Binding LoadStrategyCommand}"
+                                CommandParameter="{Binding #StrategyLoadCombo.SelectedItem}"
+                                ToolTip.Tip="Laedt die ausgewaehlte Strategie in den Editor"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ═�
