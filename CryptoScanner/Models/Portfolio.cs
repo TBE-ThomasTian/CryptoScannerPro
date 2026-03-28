@@ -12,6 +12,7 @@ public partial class Portfolio : ObservableObject
 
     public ObservableCollection<PortfolioPosition> Positions { get; set; } = new();
     public ObservableCollection<Transaction> TransactionHistory { get; set; } = new();
+    public List<PortfolioSnapshot> ValueHistory { get; set; } = new();
 
     public string CurrencySymbol => Currency == "EUR" ? "\u20AC" : "$";
 

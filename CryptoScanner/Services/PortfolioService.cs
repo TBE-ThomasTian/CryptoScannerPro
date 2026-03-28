@@ -163,6 +163,17 @@ public class PortfolioService
             }
         }
         _portfolio.RefreshComputedProperties();
+        RecordSnapshot();
+    }
+
+    public void RecordSnapshot()
+    {
+        _portfolio.ValueHistory.Add(new PortfolioSnapshot
+        {
+            Timestamp = DateTime.Now,
+            TotalValue = _portfolio.TotalValue
+        });
+        Save();
     }
 
     public void Save()
@@ -185,6 +196,10 @@ public class PortfolioService
                     Timestamp = t.Timestamp, Symbol = t.Symbol, Type = t.Type.ToString(),
                     Amount = t.Amount, PricePerUnit = t.PricePerUnit, TotalCost = t.TotalCost,
                     Source = t.Source
+                }).ToList(),
+                Snapshots = _portfolio.ValueHistory.Select(s => new SnapshotData
+                {
+                    Timestamp = s.Timestamp, TotalValue = s.TotalValue
                 }).ToList()
             };
 
@@ -230,6 +245,13 @@ public class PortfolioService
                     TotalCost = t.TotalCost, Source = t.Source
                 });
 
+            if (data.Snapshots != null)
+                foreach (var s in data.Snapshots)
+                    portfolio.ValueHistory.Add(new PortfolioSnapshot
+                    {
+                        Timestamp = s.Timestamp, TotalValue = s.TotalValue
+                    });
+
             return portfolio;
         }
         catch (Exception ex)
@@ -248,6 +270,7 @@ public class PortfolioService
         public DateTime CreatedAt { get; set; }
         public List<PositionData> Positions { get; set; } = new();
         public List<TransactionData> Transactions { get; set; } = new();
+        public List<SnapshotData> Snapshots { get; set; } = new();
     }
 
     private class PositionData
@@ -267,5 +290,11 @@ public class PortfolioService
         public decimal PricePerUnit { get; set; }
         public decimal TotalCost { get; set; }
         public string Source { get; set; } = "";
+    }
+
+    private class SnapshotData
+    {
+        public DateTime Timestamp { get; set; }
+        public decimal TotalValue { get; set; }
     }
 }

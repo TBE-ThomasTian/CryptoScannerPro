@@ -153,6 +153,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     // ── Portfolio ──────────────────────────────────────────────
     public Portfolio Portfolio => _portfolioService.Portfolio;
+    [ObservableProperty] private List<PortfolioSnapshot>? _portfolioSnapshots;
 
     // ── Options ────────────────────────────────────────────────
     public ObservableCollection<string> FilterOptions { get; } = new()
@@ -474,6 +475,7 @@ public partial class MainWindowViewModel : ObservableObject
                 LastUpdateTime = DateTime.Now.ToString("HH:mm:ss");
                 StatusText = $"Scan abgeschlossen: {coinCount} Coins gefunden" + (errCount > 0 ? $" ({errCount} Fehler)" : "");
                 OnPropertyChanged(nameof(Portfolio));
+                PortfolioSnapshots = Portfolio.ValueHistory.ToList();
 
                 // AI auto-trading after scan
                 if (AiAutoTrading && _allCoins.Count > 0)
@@ -580,6 +582,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (success)
         {
             OnPropertyChanged(nameof(Portfolio));
+            PortfolioSnapshots = Portfolio.ValueHistory.ToList();
             OnPropertyChanged(nameof(CanEditStartingBalance));
             ShowBuyDialog = false;
             StatusText = message;
@@ -607,6 +610,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (success)
         {
             OnPropertyChanged(nameof(Portfolio));
+            PortfolioSnapshots = Portfolio.ValueHistory.ToList();
             ShowSellDialog = false;
             StatusText = message;
         }
@@ -631,6 +635,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         _portfolioService.ResetPortfolio(balance, currency);
         OnPropertyChanged(nameof(Portfolio));
+        PortfolioSnapshots = Portfolio.ValueHistory.ToList();
         OnPropertyChanged(nameof(CanEditStartingBalance));
         StatusText = $"Depot zurueckgesetzt auf {balance:N0} {currency}";
     }
@@ -684,6 +689,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (success)
         {
             OnPropertyChanged(nameof(Portfolio));
+            PortfolioSnapshots = Portfolio.ValueHistory.ToList();
             AiLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {order.ActionText} {order.Symbol}: {message}");
             AiRecommendations.Remove(order);
         }
@@ -867,6 +873,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(Portfolio));
+        PortfolioSnapshots = Portfolio.ValueHistory.ToList();
         OnPropertyChanged(nameof(CanEditStartingBalance));
         StrategyStatusText = $"Fake-Depot aktualisiert: {executed}/{orders.Count} Strategie-Trades ausgefuehrt";
     }
@@ -879,6 +886,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (success)
         {
             OnPropertyChanged(nameof(Portfolio));
+            PortfolioSnapshots = Portfolio.ValueHistory.ToList();
             StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {order.ActionText} {order.Symbol}: {message}");
             StrategyResults.Remove(order);
         }

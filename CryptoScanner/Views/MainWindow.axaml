@@ -335,12 +335,10 @@
                                                                    Foreground="#FF4757" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
                                                     </Grid>
                                                     <!-- Bid/Ask bar -->
-                                                    <Grid ColumnDefinitions="*,*" Height="8">
-                                                        <Border Grid.Column="0" Background="#00D4AA" CornerRadius="4,0,0,4"
-                                                                HorizontalAlignment="Stretch"/>
-                                                        <Border Grid.Column="1" Background="#FF4757" CornerRadius="0,4,4,0"
-                                                                HorizontalAlignment="Stretch"/>
-                                                    </Grid>
+                                                    <ProgressBar Minimum="0" Maximum="100"
+                                                                 Value="{Binding OrderBook.BidPercent}"
+                                                                 Height="8" CornerRadius="4"
+                                                                 Foreground="#00D4AA" Background="#FF4757"/>
                                                     <TextBlock Text="{Binding OrderBook.PressureLabel}"
                                                                Foreground="{Binding OrderBook.PressureColor, Converter={StaticResource HexToBrush}}"
                                                                FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
@@ -453,6 +451,15 @@
                                            FontSize="10" Foreground="#484F58" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
                             </StackPanel>
                         </StackPanel>
+                    </Border>
+
+                    <!-- Portfolio Chart -->
+                    <TextBlock Text="Depot-Entwicklung" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <Border Background="#161B22" CornerRadius="10" Padding="8" BorderBrush="#21262D" BorderThickness="1" Height="250">
+                        <views:PortfolioChartControl
+                            Snapshots="{Binding PortfolioSnapshots}"
+                            InitialBalance="{Binding Portfolio.InitialBalance}"
+                            CurrencySymbol="{Binding Portfolio.CurrencySymbol}"/>
                     </Border>
 
                     <!-- Positions -->
