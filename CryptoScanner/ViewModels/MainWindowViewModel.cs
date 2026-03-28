@@ -795,4 +795,202 @@ public partial class MainWindowViewModel : ObservableObject
         var preset = StrategyPresets.All.FirstOrDefault(p => p.Name == name);
         if (preset.Factory != null)
         {
-       
+            CurrentStrategy = preset.Factory();
+            StrategyStatusText = $"Vorlage \"{name}\" geladen";
+            return;
+        }
+
+        var loaded = _strategyService.Load(name);
+        if (loaded != null)
+        {
+            CurrentStrategy = loaded;
+            StrategyStatusText = $"Strategie \"{name}\" geladen ({loaded.Blocks.Count} Bloecke)";
+        }
+    }
+
+    [RelayCommand]
+    private void TestStrategy()
+    {
+        if (_allCoins.Count == 0)
+        {
+            StrategyStatusText = "Bitte zuerst einen Scan durchfuehren.";
+            return;
+        }
+
+        var results = GetCurrentStrategyOrders();
+        StrategyResults.Clear();
+        foreach (var r in results) StrategyResults.Add(r);
+
+        StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] Test: {results.Count} Trades vorgeschlagen");
+        foreach (var r in results)
+            StrategyLog.Insert(0, $"  {r.ActionText} {r.Symbol}: {r.Reason}");
+
+        StrategyStatusText = $"Test abgeschlossen: {results.Count} Trades";
+    }
+
+    [RelayCommand]
+    private void ApplyStrategyToPaperPortfolio()
+    {
+        if (_allCoins.Count == 0)
+        {
+            StrategyStatusText = "Bitte zuerst einen Scan durchfuehren.";
+            return;
+        }
+
+        var orders = GetCurrentStrategyOrders();
+        if (orders.Count == 0)
+        {
+            StrategyResults.Clear();
+            StrategyStatusText = "Keine Strategie-Trades fuer das Fake-Depot gefunden.";
+            StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] Keine Strategie-Trades zum Ausfuehren");
+            return;
+        }
+
+        StrategyResults.Clear();
+        foreach (var order in orders)
+            StrategyResults.Add(order);
+
+        int executed = 0;
+        foreach (var order in orders)
+        {
+            var (success, message) = _portfolioService.ExecuteStrategyTrade(order);
+            if (success)
+            {
+                executed++;
+                StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {order.ActionText} {order.Symbol}: {message}");
+                StrategyResults.Remove(order);
+            }
+            else
+            {
+                StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] FEHLER {order.Symbol}: {message}");
+            }
+        }
+
+        OnPropertyChanged(nameof(Portfolio));
+        OnPropertyChanged(nameof(CanEditStartingBalance));
+        StrategyStatusText = $"Fake-Depot aktualisiert: {executed}/{orders.Count} Strategie-Trades ausgefuehrt";
+    }
+
+    [RelayCommand]
+    private void ExecuteStrategyOrder(TradeOrder? order)
+    {
+        if (order == null) return;
+        var (success, message) = _portfolioService.ExecuteStrategyTrade(order);
+        if (success)
+        {
+            OnPropertyChanged(nameof(Portfolio));
+            StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {order.ActionText} {order.Symbol}: {message}");
+            StrategyResults.Remove(order);
+        }
+    }
+
+    [RelayCommand]
+    private void ExecuteAllStrategyOrders()
+    {
+        var orders = StrategyResults.ToList();
+        foreach (var o in orders) ExecuteStrategyOrder(o);
+        StrategyStatusText = $"{orders.Count} Strategie-Trades ausgefuehrt";
+    }
+
+    private List<TradeOrder> GetCurrentStrategyOrders()
+    {
+        var orders = _strategyService.Execute(CurrentStrategy, _allCoins, Portfolio);
+
+        // Apply optional quality filters before showing or executing strategy trades.
+        if (orders.Count == 0)
+            return orders;
+
+        var buyOrders = new List<TradeOrder>();
+        var sellOrders = new List<TradeOrder>();
+
+        foreach (var order in orders)
+        {
+            if (order.Action == TradeAction.Sell)
+            {
+                sellOrders.Add(order);
+                continue;
+            }
+
+            if (order.Action != TradeAction.Buy)
+                continue;
+
+            var coin = _allCoins.FirstOrDefault(c => c.DisplayName == order.Symbol);
+            if (coin?.Indicators == null)
+                continue;
+
+            if (StrategyRequirePositiveDayChange && coin.Change24hPercent <= 0)
+                continue;
+
+            if (StrategyRequireAboveSma50 && coin.CurrentPrice <= coin.Indicators.Sma50)
+                continue;
+
+            if (StrategyRequirePositiveMacd && coin.Indicators.MacdHistogram <= 0)
+                continue;
+
+            if (StrategyRequireMinScore40 && coin.CompositeScore < 40)
+                continue;
+
+            if (StrategyRequireAboveAverageVolume && !coin.Indicators.IsVolumeAboveAverage)
+                continue;
+
+            if (StrategySkipExistingPositions &&
+                Portfolio.Positions.Any(p => p.Symbol == coin.DisplayName && p.Amount > 0))
+                continue;
+
+            buyOrders.Add(order);
+        }
+
+        if (StrategyPreferTopScoreBuys)
+        {
+            buyOrders = buyOrders
+                .OrderByDescending(o => _allCoins.FirstOrDefault(c => c.DisplayName == o.Symbol)?.CompositeScore ?? int.MinValue)
+                .Take(3)
+                .ToList();
+        }
+
+        return sellOrders.Concat(buyOrders).ToList();
+    }
+
+    private void ApplyStrategyFilterPreset(string? preset)
+    {
+        switch (preset)
+        {
+            case "Konservativ":
+                StrategyRequirePositiveDayChange = true;
+                StrategyRequireAboveSma50 = true;
+                StrategyRequirePositiveMacd = true;
+                StrategyRequireMinScore40 = true;
+                StrategyRequireAboveAverageVolume = true;
+                StrategySkipExistingPositions = true;
+                StrategyPreferTopScoreBuys = true;
+                break;
+            case "Aggressiv":
+                StrategyRequirePositiveDayChange = false;
+                StrategyRequireAboveSma50 = false;
+                StrategyRequirePositiveMacd = false;
+                StrategyRequireMinScore40 = false;
+                StrategyRequireAboveAverageVolume = false;
+                StrategySkipExistingPositions = false;
+                StrategyPreferTopScoreBuys = false;
+                break;
+            default:
+                StrategyRequirePositiveDayChange = true;
+                StrategyRequireAboveSma50 = true;
+                StrategyRequirePositiveMacd = true;
+                StrategyRequireMinScore40 = true;
+                StrategyRequireAboveAverageVolume = false;
+                StrategySkipExistingPositions = true;
+                StrategyPreferTopScoreBuys = true;
+                break;
+        }
+    }
+
+    [RelayCommand]
+    private void NewStrategy()
+    {
+        CurrentStrategy = StrategyPresets.RsiMomentum();
+        CurrentStrategy.Name = "Neue Strategie";
+        StrategyResults.Clear();
+        StrategyStatusText = "Neue Strategie erstellt (RSI Momentum Vorlage)";
+    }
+}

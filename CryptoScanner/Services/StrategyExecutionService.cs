@@ -276,4 +276,79 @@ public class StrategyExecutionService
         catch { }
     }
 
-    public TradingStrateg
+    public TradingStrategy? Load(string name)
+    {
+        try
+        {
+            var path = Path.Combine(_saveDir, SanitizeName(name) + ".json");
+            if (!File.Exists(path)) return null;
+            var json = File.ReadAllText(path);
+            var data = JsonSerializer.Deserialize<StrategyData>(json);
+            if (data == null) return null;
+            return DataToStrategy(data);
+        }
+        catch { return null; }
+    }
+
+    public List<string> ListSavedStrategies()
+    {
+        try
+        {
+            return Directory.GetFiles(_saveDir, "*.json")
+                .Select(f => Path.GetFileNameWithoutExtension(f))
+                .ToList();
+        }
+        catch { return new(); }
+    }
+
+    private static TradingStrategy DataToStrategy(StrategyData d)
+    {
+        var s = new TradingStrategy { Name = d.Name, IsActive = d.IsActive, CreatedAt = d.CreatedAt };
+        foreach (var b in d.Blocks)
+        {
+            Enum.TryParse<BlockType>(b.Type, out var bt);
+            s.Blocks.Add(new StrategyBlock
+            {
+                Id = b.Id, Type = bt, Category = b.Category, Operator = b.Operator,
+                Value = b.Value, ConditionPreset = b.ConditionPreset,
+                ActionAmount = b.ActionAmount, AlarmText = b.AlarmText, X = b.X, Y = b.Y
+            });
+        }
+        foreach (var c in d.Connections)
+            s.Connections.Add(new StrategyConnection { Id = c.Id, FromBlockId = c.FromBlockId, ToBlockId = c.ToBlockId, OutputPort = c.OutputPort });
+        return s;
+    }
+
+    private static string SanitizeName(string n) =>
+        string.Join("_", n.Split(Path.GetInvalidFileNameChars()));
+
+    // DTOs
+    private class StrategyData
+    {
+        public string Name { get; set; } = "";
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public List<BlockData> Blocks { get; set; } = new();
+        public List<ConnData> Connections { get; set; } = new();
+    }
+    private class BlockData
+    {
+        public Guid Id { get; set; }
+        public string Type { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Operator { get; set; } = "";
+        public double Value { get; set; }
+        public string ConditionPreset { get; set; } = "";
+        public string ActionAmount { get; set; } = "";
+        public string AlarmText { get; set; } = "";
+        public double X { get; set; }
+        public double Y { get; set; }
+    }
+    private class ConnData
+    {
+        public Guid Id { get; set; }
+        public Guid FromBlockId { get; set; }
+        public Guid ToBlockId { get; set; }
+        public string OutputPort { get; set; } = "";
+    }
+}

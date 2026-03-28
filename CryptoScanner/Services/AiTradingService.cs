@@ -199,4 +199,16 @@ public class AiTradingService : IAiTradingService
             Amount = o.Amount,
             Confidence = o.Confidence,
             Reason = o.Reason ?? "",
-            CurrentPrice = coins.FirstOrDefault(c => c.DisplayName == o.Symbol)?.Curr
+            CurrentPrice = coins.FirstOrDefault(c => c.DisplayName == o.Symbol)?.CurrentPrice ?? 0
+        }).ToList();
+    }
+
+    private class AiOrderDto
+    {
+        public string? Symbol { get; set; }
+        public string? Action { get; set; }
+        public decimal Amount { get; set; }
+        public decimal Confidence { get; set; }
+        public string? Reason { get; set; }
+    }
+}

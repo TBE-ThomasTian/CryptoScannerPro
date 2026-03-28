@@ -102,4 +102,5 @@ public class TechnicalIndicators
         }
     }
 
-    public string VolumeSignal => IsVolumeAboveAverage ? "Überdurc
+    public string VolumeSignal => IsVolumeAboveAverage ? "Überdurchschnittlich" : "Unterdurchschnittlich";
+}

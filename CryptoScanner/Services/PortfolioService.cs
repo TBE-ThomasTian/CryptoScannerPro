@@ -254,4 +254,18 @@ public class PortfolioService
     {
         public string Symbol { get; set; } = "";
         public string DisplayName { get; set; } = "";
-        public decimal Amount {
+        public decimal Amount { get; set; }
+        public decimal AverageBuyPrice { get; set; }
+    }
+
+    private class TransactionData
+    {
+        public DateTime Timestamp { get; set; }
+        public string Symbol { get; set; } = "";
+        public string Type { get; set; } = "";
+        public decimal Amount { get; set; }
+        public decimal PricePerUnit { get; set; }
+        public decimal TotalCost { get; set; }
+        public string Source { get; set; } = "";
+    }
+}

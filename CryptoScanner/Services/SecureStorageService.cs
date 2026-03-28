@@ -88,4 +88,17 @@ public class SecureStorageService
         var tag = encrypted[29..45];
         var ciphertext = encrypted[45..];
         var plaintext = new byte[ciphertext.Length];
-        var key =
+        var key = DeriveFallbackKey(salt);
+
+        using var aes = new AesGcm(key, 16);
+        aes.Decrypt(nonce, ciphertext, tag, plaintext);
+        return plaintext;
+    }
+
+    private static byte[] DeriveFallbackKey(byte[] salt)
+    {
+        var seed = $"CryptoScanner_{Environment.MachineName}_{Environment.UserName}_v2_secure";
+        using var kdf = new Rfc2898DeriveBytes(seed, salt, 100_000, HashAlgorithmName.SHA256);
+        return kdf.GetBytes(32);
+    }
+}

@@ -782,4 +782,211 @@
             </Grid>
         </Grid>
 
-        <!-- ═�
+        <!-- ═══ HELP OVERLAY ═══ -->
+        <Border Grid.Row="2" IsVisible="{Binding ShowHelpDialog}"
+                Background="#80000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border Background="#161B22" CornerRadius="12" Padding="24" BorderBrush="#30363D" BorderThickness="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Width="860" MaxHeight="760">
+                <Grid RowDefinitions="Auto,* ,Auto">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Hilfe" FontSize="22" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            <TextBlock Text="So benutzt du CryptoScanner am einfachsten." FontSize="12" Foreground="#8B949E"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="X" Padding="8,4" Command="{Binding CloseHelpCommand}"/>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" Margin="0,18,0,12">
+                        <StackPanel Spacing="14">
+                            <Border Background="#0D1117" CornerRadius="10" Padding="14" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="1. Schnellstart" FontSize="15" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Waehle oben die Waehrung und den Zeitraum. Klicke dann auf 'Scan Starten'." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Links erscheint die Coin-Liste. Klicke auf einen Coin, um rechts das Diagramm und die Details zu sehen." TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="14" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="2. Scanner: Leiste, Buttons und Spalten" FontSize="15" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Scan Starten: Laedt Handelspaare, Preise und OHLC-Daten neu." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Abbrechen: Stoppt den aktuellen Scan." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Waehrung: Waehlt USD oder EUR fuer Scanner und Depot." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Suchen: Filtert die Liste nach Coin-Name oder Symbol." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Filter: Zeigt nur Coins mit dem ausgewaehlten Scanner-Signal." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Sortierung und A/Z: Sortiert die Tabelle auf- oder absteigend." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Zeitraum: Bestimmt Diagramm und Analysefenster wie 24h, 7 Tage, 1 Monat, 3 Monate oder 1 Jahr." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Auto und Intervall: Startet automatisch neue Scans." TextWrapping="Wrap"/>
+                                    <TextBlock Text="COIN: Name des Basiswerts. PREIS: letzter bekannter Marktpreis. 24H %: Preisveraenderung der letzten 24 Stunden." TextWrapping="Wrap"/>
+                                    <TextBlock Text="SCORE: Gesamtscore aus mehreren Indikatoren. SIGNAL: daraus abgeleitete Scanner-Empfehlung." TextWrapping="Wrap"/>
+                                    <TextBlock Text="MEINE STRATEGIE: Was deine aktive Strategie fuer diesen Coin tun wuerde." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Kaufen-Button: Oeffnet den Kaufdialog fuer Paper-Trading." TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="14" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="3. Detailbereich und Diagramm" FontSize="15" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Das eigentliche Gesamtergebnis ist immer der Score mit dem farbigen Signal." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Einzelindikatoren wie RSI oder Bollinger koennen neutral sein, auch wenn das Gesamtsignal auf Kauf steht." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Mit 'Kerzen' wechselst du zwischen Linien- und Kerzendarstellung." TextWrapping="Wrap"/>
+                                    <TextBlock Text="SMA 20, SMA 50, EMA 12, EMA 26 und BB blenden Zusatzlinien ein oder aus." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Mit dem Mausrad kannst du zoomen, mit gedrueckter linker Maustaste verschieben und per Doppelklick zuruecksetzen." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Wenn du mit der Maus ueber das Diagramm faehrst, siehst du Preis, Zeit und OHLC-Werte." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Orderbuch zeigt den aktuellen Kauf- und Verkaufsdruck, falls Daten geladen wurden." TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="14" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="4. Depot" FontSize="15" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Startkapital: Betrag, mit dem dein Paper-Trading beginnt." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Depot Zuruecksetzen: Setzt Positionen und Verlauf auf das Startkapital zurueck." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Positionen-Tabelle: Zeigt Coin, Menge, Kaufpreis, aktuellen Kurs, Gesamtwert und Gewinn/Verlust." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Verkaufen-Button: Oeffnet den Verkaufsdialog fuer die gewaehlte Position." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Transaktionshistorie: Zeigt Datum, Coin, Typ, Menge, Preis, Gesamt und Quelle eines Trades." TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="14" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="5. KI-Trading" FontSize="15" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Anbieter: Waehlt den KI-Dienst. API-Schluessel: Zugangsschluessel. API-URL: Endpunkt des Dienstes." TextWrapping="Wrap"/>
+                                    <TextBlock Text="KI-Analyse Starten: Erstellt neue Empfehlungen aus aktuellen Scan-Daten." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Alle Ausfuehren: Fuehrt alle angezeigten KI-Empfehlungen als Paper-Trades aus." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Auto-Trading: Startet die KI-Analyse automatisch nach jedem Scan." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Empfehlungstabelle: Zeigt Coin, Aktion, Menge, Konfidenz und Begruendung." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Ausfuehren-Button: Fuehrt nur die jeweilige Empfehlung aus." TextWrapping="Wrap"/>
+                                    <TextBlock Text="KI-Protokoll: Verlauf der Analysen und eventueller Fehler." TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="14" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="6. Strategie" FontSize="15" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Strategie-Name: Name deiner aktuellen Strategie." TextWrapping="Wrap"/>
+                                    <TextBlock Text="RSI, MACD, SMA, EMA, BB, Vol, Score: Fuegen neue Bedingungsbloecke hinzu." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Kaufen, Verkaufen, Halten: Fuegen Aktionsbloecke hinzu." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Speichern, Neu, Testen: Strategie sichern, neu beginnen oder gegen aktuelle Scan-Daten pruefen." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Aktiv: Wendet die Strategie nach jedem Scan automatisch auf alle Coins an." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Zentrieren und Loeschen: Arbeitsflaeche ordnen oder ausgewaehlten Block entfernen." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Gespeicherte Strategien und Laden: Oeffnet eine vorhandene Strategie im Editor." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Strategie-Ergebnisse: Zeigt Coin, Aktion, Menge und Grund fuer den letzten Test." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Alle ausfuehren und Ausfuehren: Fuehren vorgeschlagene Strategie-Trades als Paper-Trades aus." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Protokoll: Verlauf deiner Strategietests und Ausfuehrungen." TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="14" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="7. Kauf- und Verkaufsfenster" FontSize="15" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Anzahl Coins oder Betrag in Waehrung: Bestimmt, wie du kaufen willst." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Alles: Setzt den maximal moeglichen Betrag oder die ganze Position ein." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Vorschau: Zeigt vorab, was dein Eintrag bedeutet." TextWrapping="Wrap"/>
+                                    <TextBlock Text="Kaufen oder Verkaufen: Fuehrt den Paper-Trade aus. Abbrechen schliesst das Fenster ohne Aenderung." TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Schliessen" Padding="14,7" Command="{Binding CloseHelpCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Border>
+
+        <!-- ═══ BUY DIALOG OVERLAY ═══ -->
+        <Border Grid.Row="2" IsVisible="{Binding ShowBuyDialog}"
+                Background="#80000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border Background="#161B22" CornerRadius="12" Padding="24" BorderBrush="#30363D" BorderThickness="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Width="400">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Coin Kaufen" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{Binding TradeCoin.DisplayName}" FontSize="14" Foreground="#8B949E" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TradeCoin.PriceFormatted}" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding TradeMaxInfo}" Foreground="#00D4AA" FontWeight="SemiBold" FontSize="13"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <RadioButton Content="Anzahl Coins" GroupName="BuyMode"
+                                     IsChecked="{Binding !TradeByValue}" Foreground="#C9D1D9" FontSize="12"/>
+                        <RadioButton Content="Betrag in Waehrung" GroupName="BuyMode"
+                                     IsChecked="{Binding TradeByValue}" Foreground="#C9D1D9" FontSize="12"/>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Watermark="Menge (z.B. 0.01)" Text="{Binding TradeAmount}"
+                                 ToolTip.Tip="Wie viele Coins du kaufen moechtest"
+                                 IsVisible="{Binding !TradeByValue}"/>
+                        <TextBox Watermark="Betrag (z.B. 500)" Text="{Binding TradeValueInput}"
+                                 ToolTip.Tip="Welchen Geldbetrag du investieren moechtest"
+                                 IsVisible="{Binding TradeByValue}"/>
+                        <Button Grid.Column="1" Content="Alles" Padding="8,5" Margin="6,0,0,0" FontSize="11"
+                                Command="{Binding FillMaxTradeCommand}"
+                                ToolTip.Tip="Maximalen verfuegbaren Betrag einsetzen"/>
+                    </Grid>
+
+                    <TextBlock Text="{Binding TradePreview}" Foreground="#8B949E" FontSize="12" FontStyle="Italic"/>
+                    <TextBlock Text="{Binding TradeMessage}" Foreground="#FF4757" FontSize="12"
+                               IsVisible="{Binding TradeMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+                        <Button Content="Abbrechen" Command="{Binding CancelTradeCommand}" Padding="14,7"
+                                ToolTip.Tip="Kaufdialog ohne Aenderung schliessen"/>
+                        <Button Classes="accent" Command="{Binding ExecuteBuyCommand}" Padding="14,7"
+                                ToolTip.Tip="Fuehrt den Kauf als Paper-Trade aus">
+                            <TextBlock Text="Kaufen" Foreground="#0D1117" FontWeight="SemiBold"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ═══ SELL DIALOG OVERLAY ═══ -->
+        <Border Grid.Row="2" IsVisible="{Binding ShowSellDialog}"
+                Background="#80000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border Background="#161B22" CornerRadius="12" Padding="24" BorderBrush="#30363D" BorderThickness="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Width="400">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Coin Verkaufen" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{Binding SellPosition.Symbol}" FontSize="14" Foreground="#8B949E" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding SellPosition.CurrentPriceFormatted}" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding TradeMaxInfo}" Foreground="#FF4757" FontWeight="SemiBold" FontSize="13"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Watermark="Menge zum Verkaufen" Text="{Binding TradeAmount}"
+                                 ToolTip.Tip="Wie viele Coins du verkaufen moechtest"/>
+                        <Button Grid.Column="1" Content="Alles" Padding="8,5" Margin="6,0,0,0" FontSize="11"
+                                Command="{Binding FillMaxTradeCommand}"
+                                ToolTip.Tip="Gesamte Position verkaufen"/>
+                    </Grid>
+
+                    <TextBlock Text="{Binding TradePreview}" Foreground="#8B949E" FontSize="12" FontStyle="Italic"/>
+                    <TextBlock Text="{Binding TradeMessage}" Foreground="#FF4757" FontSize="12"
+                               IsVisible="{Binding TradeMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+                        <Button Content="Abbrechen" Command="{Binding CancelTradeCommand}" Padding="14,7"
+                                ToolTip.Tip="Verkaufsdialog ohne Aenderung schliessen"/>
+                        <Button Classes="sell" Command="{Binding ExecuteSellCommand}" Padding="14,7"
+                                ToolTip.Tip="Fuehrt den Verkauf als Paper-Trade aus">
+                            <TextBlock Text="Verkaufen" Foreground="White" FontWeight="SemiBold"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ═══ STATUS BAR ═══ -->
+        <Border Grid.Row="3" Background="#161B22" Padding="16,6" BorderBrush="#21262D" BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding ErrorText}" FontSize="11" Foreground="#FF4757" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding Coins.Count, StringFormat=Coins: {0}}" FontSize="11" Foreground="#484F58" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="3" Text="&#x2921;" FontSize="12" Foreground="#30363D" VerticalAlignment="Bottom" Margin="8,0,2,0"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
