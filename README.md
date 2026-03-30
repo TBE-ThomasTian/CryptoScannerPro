@@ -112,7 +112,7 @@ CryptoScanner/
 
 ### License
 
-This project is licensed under the MIT License.
+This project is licensed under the GNU GPL v3.0.
 
 ---
 
@@ -228,4 +228,4 @@ CryptoScanner/
 
 ### Lizenz
 
-Dieses Projekt steht unter der MIT-Lizenz.
+Dieses Projekt steht unter der GNU GPL v3.0.
