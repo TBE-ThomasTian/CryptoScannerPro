@@ -40,10 +40,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET 8 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
@@ -74,7 +74,7 @@ jobs:
           tar -czf "artifacts/${{ matrix.package_name }}.tar.gz" -C "artifacts" "${{ matrix.package_name }}"
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.package_name }}
           path: artifacts/${{ matrix.package_name }}.${{ matrix.archive_ext }}

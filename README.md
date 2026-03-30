@@ -1,101 +1,113 @@
-# CryptoScanner - Kryptowährungs-Analyse-Tool
+# CryptoScanner
 
-Ein Desktop-Analysewerkzeug für Kryptowährungen, gebaut mit Avalonia UI (.NET 8). Läuft auf **Windows** und **Linux**.
+DE: Desktop-Tool fuer Krypto-Analyse, Scanner-Signale, Paper-Trading, Strategie-Builder und KI-Unterstuetzung auf Basis von Avalonia UI und .NET 8.
 
-> **⚠ Keine Anlageberatung** – Dieses Tool dient ausschließlich zu Informationszwecken. Alle angezeigten Signale und Bewertungen stellen keine Kauf- oder Verkaufsempfehlungen dar.
+EN: Desktop app for crypto analysis, scanner signals, paper trading, strategy building, and AI-assisted workflows built with Avalonia UI and .NET 8.
 
-## Funktionen
+> DE: Keine Anlageberatung. Dieses Projekt dient nur zu Informations-, Lern- und Testzwecken.
+>
+> EN: Not financial advice. This project is for information, learning, and testing only.
 
-- Echtzeit-Daten von der Kraken Public API (kein API-Schlüssel nötig)
-- Technische Indikatoren: RSI, MACD, SMA, EMA, Bollinger Bänder, Volumen
-- Composite-Score (-100 bis +100) mit Signalen: Starker Kauf, Kauf, Halten, Verkauf, Starker Verkauf
-- Dunkles Krypto-Design mit farbcodierten Signalen
-- Such- und Filterfunktion
-- Detailansicht mit allen Indikatoren
-- Auto-Aktualisierung (2-Minuten-Intervall)
+## Features
 
-## Voraussetzungen
+- DE: Echtzeit-Marktdaten ueber die Kraken Public API ohne privaten API-Key
+- EN: Real-time market data via the Kraken public API without a private API key
+- DE: Technische Analyse mit RSI, MACD, SMA, EMA, Bollinger-Baendern und Volumen
+- EN: Technical analysis with RSI, MACD, SMA, EMA, Bollinger Bands, and volume
+- DE: Composite-Score mit Kauf-, Halten- und Verkaufssignalen
+- EN: Composite score with buy, hold, and sell signals
+- DE: Paper-Trading-Depot mit Gebuehren, Historie und Depotentwicklung
+- EN: Paper trading portfolio with fees, history, and portfolio performance
+- DE: Visueller Strategie-Editor mit Testen, Optimieren und Fake-Depot-Ausfuehrung
+- EN: Visual strategy editor with testing, optimization, and paper portfolio execution
+- DE: Benutzeroberflaeche mit Deutsch/Englisch-Umschaltung
+- EN: User interface with German/English language switching
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (Version 8.0 oder höher)
+## Platforms
 
-### Linux (zusätzlich)
+- Windows
+- Linux
+- macOS
+
+## Requirements
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+
+### Linux dependencies
 
 ```bash
-# Ubuntu/Debian
+# Ubuntu / Debian
 sudo apt-get install -y libx11-dev libice-dev libsm-dev libfontconfig1-dev
 
 # Fedora
 sudo dnf install libX11-devel libICE-devel libSM-devel fontconfig-devel
 ```
 
-## Build & Ausführung
+## Run locally
 
 ```bash
-# Repository-Verzeichnis öffnen
 cd CryptoScanner
-
-# NuGet-Pakete wiederherstellen
 dotnet restore
-
-# Projekt bauen
 dotnet build
-
-# Anwendung starten
 dotnet run --project CryptoScanner
 ```
 
-### Release-Build erstellen
+## Release builds
+
+Manual publish examples:
 
 ```bash
 # Windows
-dotnet publish -c Release -r win-x64 --self-contained
+dotnet publish CryptoScanner/CryptoScanner.csproj -c Release -r win-x64 --self-contained
 
 # Linux
-dotnet publish -c Release -r linux-x64 --self-contained
+dotnet publish CryptoScanner/CryptoScanner.csproj -c Release -r linux-x64 --self-contained
+
+# macOS Intel
+dotnet publish CryptoScanner/CryptoScanner.csproj -c Release -r osx-x64 --self-contained
+
+# macOS Apple Silicon
+dotnet publish CryptoScanner/CryptoScanner.csproj -c Release -r osx-arm64 --self-contained
 ```
 
-## Bedienung
+Automated GitHub releases:
 
-1. **Scan starten** – Klicke auf "Scan Starten", um alle USD-Handelspaare von Kraken zu laden und zu analysieren
-2. **Suchen** – Tippe einen Coin-Namen in das Suchfeld (z.B. "BTC", "ETH")
-3. **Filtern** – Wähle ein Signal im Dropdown (z.B. nur "Starker Kauf" anzeigen)
-4. **Details** – Klicke auf einen Coin in der Liste, um die technische Analyse im Detail zu sehen
-5. **Auto-Aktualisierung** – Aktiviere das Kontrollkästchen, um alle 2 Minuten automatisch neu zu scannen
+- DE: Ein Git-Tag wie `v1.0.0` startet den GitHub-Actions-Workflow und baut Release-Artefakte fuer Windows, Linux und macOS.
+- EN: A git tag like `v1.0.0` triggers the GitHub Actions workflow and builds release artifacts for Windows, Linux, and macOS.
 
-## Projektstruktur
+## Quick start
 
-```
+1. DE: Scan starten und Coins laden.
+   EN: Start a scan and load coins.
+2. DE: Coin auswaehlen und Chart plus Indikatoren ansehen.
+   EN: Select a coin and inspect the chart plus indicators.
+3. DE: Optional das Paper-Depot oder den Strategie-Tab verwenden.
+   EN: Optionally use the paper portfolio or strategy tab.
+
+## Project structure
+
+```text
 CryptoScanner/
+├── .github/workflows/
 ├── CryptoScanner.sln
 ├── README.md
 └── CryptoScanner/
-    ├── CryptoScanner.csproj
-    ├── Program.cs
-    ├── App.axaml / App.axaml.cs
+    ├── Assets/
     ├── Models/
-    │   ├── CryptoCoin.cs
-    │   ├── OhlcCandle.cs
-    │   ├── SignalType.cs
-    │   └── TechnicalIndicators.cs
+    ├── Services/
     ├── ViewModels/
-    │   └── MainWindowViewModel.cs
-    ├── Views/
-    │   ├── MainWindow.axaml / MainWindow.axaml.cs
-    │   └── Converters.cs
-    └── Services/
-        ├── KrakenApiService.cs
-        ├── TechnicalAnalysisService.cs
-        └── ScoringService.cs
+    └── Views/
 ```
 
-## Technische Details
+## Tech stack
 
-- **API**: Kraken Public REST API (keine Authentifizierung erforderlich)
-- **Rate-Limiting**: 350ms Verzögerung zwischen API-Aufrufen
-- **OHLC-Daten**: 1-Stunden-Kerzen für Indikatorberechnung
-- **Framework**: Avalonia UI 11.x mit FluentTheme (Dark Mode)
-- **Architektur**: MVVM mit CommunityToolkit.Mvvm
+- Avalonia UI 11
+- .NET 8
+- MVVM with CommunityToolkit.Mvvm
+- Kraken public market data
 
-## Lizenz
+## License
 
-Dieses Projekt ist für persönliche Nutzung bestimmt.
+DE: Das Projekt ist aktuell fuer private Nutzung und Weiterentwicklung gedacht.
+
+EN: The project is currently intended for private use and further development.
