@@ -127,6 +127,15 @@
 
                 <!-- Language switcher + update time -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding AppVersionText}" FontSize="10" Foreground="#6E7681" VerticalAlignment="Center"/>
+                    <Button Content="{Binding [update.check], Source={x:Static services:Loc.Instance}}" Padding="10,5" FontSize="10"
+                            Command="{Binding CheckForUpdatesCommand}"
+                            IsEnabled="{Binding IsCheckingForUpdates, Converter={StaticResource InverseBool}}"
+                            ToolTip.Tip="{Binding [update.tip], Source={x:Static services:Loc.Instance}}"/>
+                    <Button Content="{Binding [update.open], Source={x:Static services:Loc.Instance}}" Padding="10,5" FontSize="10"
+                            Command="{Binding OpenLatestReleaseCommand}"
+                            IsVisible="{Binding HasUpdateAvailable}"
+                            ToolTip.Tip="{Binding [update.open.tip], Source={x:Static services:Loc.Instance}}"/>
                     <Button Content="{Binding [help.button], Source={x:Static services:Loc.Instance}}" Padding="10,5" FontSize="10"
                             Command="{Binding OpenHelpCommand}"
                             ToolTip.Tip="{Binding [help], Source={x:Static services:Loc.Instance}}"/>
@@ -1100,11 +1109,12 @@
 
         <!-- ═══ STATUS BAR ═══ -->
         <Border Grid.Row="3" Background="#161B22" Padding="16,6" BorderBrush="#21262D" BorderThickness="0,1,0,0">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
                 <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="{Binding ErrorText}" FontSize="11" Foreground="#FF4757" VerticalAlignment="Center" Margin="0,0,14,0"/>
-                <TextBlock Grid.Column="2" Text="{Binding Coins.Count, StringFormat=Coins: {0}}" FontSize="11" Foreground="#484F58" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="3" Text="&#x2921;" FontSize="12" Foreground="#30363D" VerticalAlignment="Bottom" Margin="8,0,2,0"/>
+                <TextBlock Grid.Column="1" Text="{Binding UpdateStatusText}" FontSize="11" Foreground="#6E7681" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding ErrorText}" FontSize="11" Foreground="#FF4757" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <TextBlock Grid.Column="3" Text="{Binding CoinCountText}" FontSize="11" Foreground="#484F58" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="4" Text="&#x2921;" FontSize="12" Foreground="#30363D" VerticalAlignment="Bottom" Margin="8,0,2,0"/>
             </Grid>
         </Border>
     </Grid>

@@ -18,6 +18,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly AiTradingService _aiTradingService;
     private readonly SecureStorageService _secureStorage;
     private readonly StrategyExecutionService _strategyService;
+    private readonly UpdateService _updateService;
     private CancellationTokenSource? _scanCts;
     private CancellationTokenSource? _autoRefreshCts;
 
@@ -67,6 +68,10 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private bool _showEma26;
     [ObservableProperty] private bool _showBollingerBands;
     [ObservableProperty] private bool _showHelpDialog;
+    [ObservableProperty] private bool _isCheckingForUpdates;
+    [ObservableProperty] private string _updateStatusText = string.Empty;
+    [ObservableProperty] private string _latestAvailableVersion = string.Empty;
+    [ObservableProperty] private string _releaseUrl = string.Empty;
 
     // ── Depot starting balance input ─────────────────────────────
     [ObservableProperty] private string _startingBalanceInput = "10000";
@@ -147,9 +152,12 @@ public partial class MainWindowViewModel : ObservableObject
     public string PortfolioFeeInfo => Loc.Language == "en"
         ? $"Paper fee: {PortfolioFeeRateText} per buy/sell (Kraken-like)"
         : $"Paper-Gebuehr: {PortfolioFeeRateText} pro Kauf/Verkauf (Kraken-aehnlich)";
+    public string CoinCountText => string.Format(Loc.T("status.coins"), Coins.Count);
     public bool IsEditingConditionBlock => EditingStrategyBlock?.Type == BlockType.Condition;
     public bool IsEditingActionBlock => EditingStrategyBlock?.Type == BlockType.ActionBuy || EditingStrategyBlock?.Type == BlockType.ActionSell;
     public bool IsEditingAlarmBlock => EditingStrategyBlock?.Type == BlockType.ActionAlarm;
+    public string AppVersionText => string.Format(Loc.T("update.version"), _updateService.CurrentVersion);
+    public bool HasUpdateAvailable => !string.IsNullOrWhiteSpace(LatestAvailableVersion);
     public string StrategyBlockEditorTitle => EditingStrategyBlock == null
         ? "Block bearbeiten"
         : $"{EditingStrategyBlock.Title} bearbeiten";
@@ -238,6 +246,7 @@ public partial class MainWindowViewModel : ObservableObject
     partial void OnSelectedStrategyFilterPresetChanged(string value) => ApplyStrategyFilterPreset(value);
     partial void OnSelectedPortfolioSortChanged(string value) => RefreshPortfolioPositions();
     partial void OnPortfolioSortAscendingChanged(bool value) => RefreshPortfolioPositions();
+    partial void OnLatestAvailableVersionChanged(string value) => OnPropertyChanged(nameof(HasUpdateAvailable));
     public ObservableCollection<string> AiProviderOptions { get; } = new()
     { "ChatGPT", "Claude" };
 
@@ -385,6 +394,7 @@ public partial class MainWindowViewModel : ObservableObject
         _aiTradingService = new AiTradingService();
         _secureStorage = new SecureStorageService();
         _strategyService = new StrategyExecutionService();
+        _updateService = new UpdateService();
 
         // Load preset strategy names first, then saved ones
         foreach (var (name, _) in StrategyPresets.All)
@@ -407,6 +417,8 @@ public partial class MainWindowViewModel : ObservableObject
         var savedKey = _secureStorage.LoadApiKey();
         if (!string.IsNullOrEmpty(savedKey))
             _aiApiKey = savedKey;
+
+        _ = CheckForUpdatesAsync(true);
     }
 
     // ── Property change handlers ───────────────────────────────
@@ -477,6 +489,8 @@ public partial class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(PortfolioFeeInfo));
             OnPropertyChanged(nameof(PortfolioFeeRateText));
             OnPropertyChanged(nameof(StrategyBlockEditorTitle));
+            OnPropertyChanged(nameof(AppVersionText));
+            OnPropertyChanged(nameof(CoinCountText));
         });
     }
 
@@ -614,6 +628,7 @@ public partial class MainWindowViewModel : ObservableObject
         var list = filtered.ToList();
         Coins.Clear();
         foreach (var coin in list) Coins.Add(coin);
+        OnPropertyChanged(nameof(CoinCountText));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -770,6 +785,46 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand] private void ToggleSortDirection() => SortAscending = !SortAscending;
     [RelayCommand] private void OpenHelp() => ShowHelpDialog = true;
     [RelayCommand] private void CloseHelp() => ShowHelpDialog = false;
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync(bool silent = false)
+    {
+        if (IsCheckingForUpdates) return;
+
+        try
+        {
+            IsCheckingForUpdates = true;
+            var result = await _updateService.CheckForUpdatesAsync();
+            ReleaseUrl = result.ReleaseUrl;
+
+            if (result.HasUpdate && !string.IsNullOrWhiteSpace(result.LatestVersion))
+            {
+                LatestAvailableVersion = result.LatestVersion;
+                UpdateStatusText = string.Format(Loc.T("update.available"), result.CurrentVersion, result.LatestVersion);
+            }
+            else
+            {
+                LatestAvailableVersion = string.Empty;
+                UpdateStatusText = string.Format(Loc.T("update.none"), result.CurrentVersion);
+            }
+        }
+        catch (Exception ex)
+        {
+            LatestAvailableVersion = string.Empty;
+            UpdateStatusText = $"{Loc.T("update.error")}: {ex.Message}";
+            if (!silent)
+                ErrorText = UpdateStatusText;
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenLatestRelease()
+    {
+        _updateService.OpenReleasesPage(ReleaseUrl);
+    }
 
     [RelayCommand]
     private void SelectTab(string? index)
