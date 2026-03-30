@@ -5,6 +5,7 @@
         xmlns:services="using:CryptoScanner.Services"
         x:Class="CryptoScanner.Views.MainWindow"
         Title="CryptoScanner"
+        Icon="/Assets/app.ico"
         Width="1500" Height="950"
         MinWidth="1000" MinHeight="600"
         Background="#0D1117"
