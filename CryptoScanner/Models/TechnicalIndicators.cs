@@ -1,3 +1,5 @@
+using CryptoScanner.Services;
+
 namespace CryptoScanner.Models;
 
 public class TechnicalIndicators
@@ -59,20 +61,20 @@ public class TechnicalIndicators
 
     public string RsiSignal => Rsi14 switch
     {
-        < 30 => "Überverkauft",
-        < 40 => "Niedrig",
-        < 60 => "Neutral",
-        < 70 => "Hoch",
-        _ => "Überkauft"
+        < 30 => Loc.T("ti.rsi.oversold"),
+        < 40 => Loc.T("ti.rsi.low"),
+        < 60 => Loc.T("ti.rsi.neutral"),
+        < 70 => Loc.T("ti.rsi.high"),
+        _ => Loc.T("ti.rsi.overbought")
     };
 
     public string MacdSignalText => MacdHistogram switch
     {
-        > 0 when MacdLine > MacdSignal => "Bullisch",
-        > 0 => "Leicht Bullisch",
-        < 0 when MacdLine < MacdSignal => "Bärisch",
-        < 0 => "Leicht Bärisch",
-        _ => "Neutral"
+        > 0 when MacdLine > MacdSignal => Loc.T("ti.macd.bullish"),
+        > 0 => Loc.T("ti.macd.softbullish"),
+        < 0 when MacdLine < MacdSignal => Loc.T("ti.macd.bearish"),
+        < 0 => Loc.T("ti.macd.softbearish"),
+        _ => Loc.T("ti.rsi.neutral")
     };
 
     public string BollingerSignal
@@ -84,11 +86,11 @@ public class TechnicalIndicators
             var position = (CurrentPrice - BollingerLower) / range;
             return position switch
             {
-                < 0.1m => "Stark Überverkauft",
-                < 0.3m => "Überverkauft",
-                < 0.7m => "Neutral",
-                < 0.9m => "Überkauft",
-                _ => "Stark Überkauft"
+                < 0.1m => Loc.T("ti.bb.strongoversold"),
+                < 0.3m => Loc.T("ti.bb.oversold"),
+                < 0.7m => Loc.T("ti.rsi.neutral"),
+                < 0.9m => Loc.T("ti.bb.overbought"),
+                _ => Loc.T("ti.bb.strongoverbought")
             };
         }
     }
@@ -98,9 +100,9 @@ public class TechnicalIndicators
         get
         {
             if (Sma20 <= 0 || Sma50 <= 0) return "N/A";
-            return Sma20 > Sma50 ? "Bullisch (Golden Cross)" : "Bärisch (Death Cross)";
+            return Sma20 > Sma50 ? Loc.T("ti.sma.golden") : Loc.T("ti.sma.death");
         }
     }
 
-    public string VolumeSignal => IsVolumeAboveAverage ? "Überdurchschnittlich" : "Unterdurchschnittlich";
+    public string VolumeSignal => IsVolumeAboveAverage ? Loc.T("ti.volume.above") : Loc.T("ti.volume.below");
 }

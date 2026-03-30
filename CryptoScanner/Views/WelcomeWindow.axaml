@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="using:CryptoScanner.Views"
+        xmlns:services="using:CryptoScanner.Services"
         x:Class="CryptoScanner.Views.WelcomeWindow"
         Title="CryptoScanner"
         Width="520" Height="720"
@@ -31,7 +32,7 @@
 
                     <!-- Title -->
                     <StackPanel Spacing="2" HorizontalAlignment="Center">
-                        <TextBlock Text="CRYPTO SCANNER" FontSize="26" FontWeight="Bold"
+                        <TextBlock Text="{Binding [welcome.title], Source={x:Static services:Loc.Instance}}" FontSize="26" FontWeight="Bold"
                                    HorizontalAlignment="Center" LetterSpacing="3">
                             <TextBlock.Foreground>
                                 <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
@@ -41,32 +42,40 @@
                                 </LinearGradientBrush>
                             </TextBlock.Foreground>
                         </TextBlock>
-                        <TextBlock Text="Technische Analyse und Trading"
+                        <TextBlock Text="{Binding [welcome.subtitle], Source={x:Static services:Loc.Instance}}"
                                    FontSize="11" Foreground="#484F58" HorizontalAlignment="Center"/>
                     </StackPanel>
+
+                    <ComboBox x:Name="LanguageComboBox"
+                              HorizontalAlignment="Center"
+                              Width="80"
+                              SelectedIndex="0">
+                        <ComboBoxItem Content="DE"/>
+                        <ComboBoxItem Content="EN"/>
+                    </ComboBox>
 
                     <!-- Disclaimer card -->
                     <Border Background="#161B22" CornerRadius="10" Padding="16"
                             BorderBrush="#21262D" BorderThickness="1">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="WICHTIGER HINWEIS" FontSize="13" FontWeight="Bold"
+                            <TextBlock Text="{Binding [welcome.notice.title], Source={x:Static services:Loc.Instance}}" FontSize="13" FontWeight="Bold"
                                        Foreground="#F0B90B" HorizontalAlignment="Center"/>
 
                             <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8B949E" LineHeight="17"
                                        TextAlignment="Center"
-                                       Text="Diese Software dient ausschliesslich zu Informations- und Unterhaltungszwecken. Die bereitgestellten Analysen, Signale und Empfehlungen stellen keine Anlageberatung dar."/>
+                                       Text="{Binding [welcome.notice.1], Source={x:Static services:Loc.Instance}}"/>
 
                             <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8B949E" LineHeight="17"
                                        TextAlignment="Center"
-                                       Text="Der Handel mit Kryptowaehrungen ist mit erheblichen Risiken verbunden. Sie koennen Ihr gesamtes eingesetztes Kapital verlieren."/>
+                                       Text="{Binding [welcome.notice.2], Source={x:Static services:Loc.Instance}}"/>
 
                             <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8B949E" LineHeight="17"
                                        TextAlignment="Center"
-                                       Text="Jegliche Haftung fuer finanzielle Verluste, die durch die Nutzung dieser Software entstehen, wird ausdruecklich ausgeschlossen."/>
+                                       Text="{Binding [welcome.notice.3], Source={x:Static services:Loc.Instance}}"/>
 
                             <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#F0B90B" LineHeight="17"
                                        TextAlignment="Center" FontWeight="SemiBold"
-                                       Text="Handeln Sie stets eigenverantwortlich und investieren Sie nur Geld, dessen Verlust Sie sich leisten koennen."/>
+                                       Text="{Binding [welcome.notice.4], Source={x:Static services:Loc.Instance}}"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -80,7 +89,7 @@
                     <Border Background="#161B22" CornerRadius="8" Padding="14,10"
                             BorderBrush="#00D4AA" BorderThickness="2" HorizontalAlignment="Stretch">
                         <CheckBox x:Name="AcceptCheckBox" HorizontalAlignment="Center">
-                            <TextBlock Text="Ich habe den Hinweis gelesen und verstanden"
+                            <TextBlock Text="{Binding [welcome.accept], Source={x:Static services:Loc.Instance}}"
                                        Foreground="#F0F6FC" FontSize="13" FontWeight="Bold"
                                        TextWrapping="Wrap"/>
                         </CheckBox>
@@ -100,7 +109,7 @@
                                 <GradientStop Color="#00B894" Offset="1"/>
                             </LinearGradientBrush>
                         </Button.Background>
-                        <TextBlock Text="Weiter" FontSize="15" FontWeight="Bold" Foreground="#0D1117"/>
+                        <TextBlock Text="{Binding [welcome.continue], Source={x:Static services:Loc.Instance}}" FontSize="15" FontWeight="Bold" Foreground="#0D1117"/>
                     </Button>
 
                     <!-- Resize grip -->

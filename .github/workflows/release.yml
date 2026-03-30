@@ -1,0 +1,87 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            label: Windows x64
+            package_name: CryptoScanner-win-x64
+            archive_ext: zip
+          - os: ubuntu-latest
+            rid: linux-x64
+            label: Linux x64
+            package_name: CryptoScanner-linux-x64
+            archive_ext: tar.gz
+          - os: macos-latest
+            rid: osx-x64
+            label: macOS x64
+            package_name: CryptoScanner-osx-x64
+            archive_ext: tar.gz
+          - os: macos-latest
+            rid: osx-arm64
+            label: macOS ARM64
+            package_name: CryptoScanner-osx-arm64
+            archive_ext: tar.gz
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore CryptoScanner.sln
+
+      - name: Publish application
+        run: >
+          dotnet publish CryptoScanner/CryptoScanner.csproj
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishReadyToRun=true
+          -o artifacts/${{ matrix.package_name }}
+
+      - name: Create ZIP package
+        if: matrix.archive_ext == 'zip'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "artifacts/${{ matrix.package_name }}/*" -DestinationPath "artifacts/${{ matrix.package_name }}.zip" -Force
+
+      - name: Create tar.gz package
+        if: matrix.archive_ext == 'tar.gz'
+        shell: bash
+        run: |
+          tar -czf "artifacts/${{ matrix.package_name }}.tar.gz" -C "artifacts" "${{ matrix.package_name }}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.package_name }}
+          path: artifacts/${{ matrix.package_name }}.${{ matrix.archive_ext }}
+
+      - name: Attach package to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/${{ matrix.package_name }}.${{ matrix.archive_ext }}
+          generate_release_notes: true

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using CryptoScanner.Services;
 using CryptoScanner.ViewModels;
 
 namespace CryptoScanner.Views;
@@ -39,12 +40,12 @@ public partial class MainWindow : Window
             {
                 var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
                 {
-                    Title = "Depotliste als PDF speichern",
+                    Title = Loc.T("portfolio.savepdf.title"),
                     SuggestedFileName = $"CryptoScanner-Depot-{DateTime.Now:yyyyMMdd-HHmmss}.pdf",
                     DefaultExtension = "pdf",
                     FileTypeChoices = new[]
                     {
-                        new FilePickerFileType("PDF-Datei")
+                        new FilePickerFileType(Loc.T("portfolio.savepdf.type"))
                         {
                             Patterns = new[] { "*.pdf" }
                         }

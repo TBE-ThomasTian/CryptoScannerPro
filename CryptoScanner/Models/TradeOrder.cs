@@ -1,3 +1,5 @@
+using CryptoScanner.Services;
+
 namespace CryptoScanner.Models;
 
 public class TradeOrder
@@ -11,9 +13,9 @@ public class TradeOrder
 
     public string ActionText => Action switch
     {
-        TradeAction.Buy => "Kaufen",
-        TradeAction.Sell => "Verkaufen",
-        _ => "Halten"
+        TradeAction.Buy => Loc.T("strategy.action.buy"),
+        TradeAction.Sell => Loc.T("strategy.action.sell"),
+        _ => Loc.T("strategy.action.hold")
     };
 
     public string ActionColor => Action switch

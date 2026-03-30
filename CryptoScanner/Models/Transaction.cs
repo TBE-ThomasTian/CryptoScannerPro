@@ -1,3 +1,5 @@
+using CryptoScanner.Services;
+
 namespace CryptoScanner.Models;
 
 public class Transaction
@@ -11,8 +13,16 @@ public class Transaction
     public decimal TotalCost { get; set; }
     public string Source { get; set; } = "Manuell";
 
-    public string TypeText => Type == TransactionType.Kauf ? "Kauf" : "Verkauf";
+    public string TypeText => Type == TransactionType.Kauf ? Loc.T("strategy.action.buy") : Loc.T("strategy.action.sell");
     public string TypeColor => Type == TransactionType.Kauf ? "#00D4AA" : "#FF4757";
+    public string SourceText => Source switch
+    {
+        "Manuell" or "Manual" => Loc.T("source.manual"),
+        "KI-Trading" or "AI Trading" => Loc.T("source.ai"),
+        "Strategie" or "Strategy" => Loc.T("source.strategy"),
+        "Backtest" => Loc.T("source.backtest"),
+        _ => Source
+    };
     public string TimestampFormatted => Timestamp.ToString("dd.MM.yyyy HH:mm");
     public string FeeFormatted => Fee.ToString("N2");
     public string TotalFormatted => TotalCost.ToString("N2");

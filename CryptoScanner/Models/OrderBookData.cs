@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CryptoScanner.Services;
 
 namespace CryptoScanner.Models;
 
@@ -16,11 +17,11 @@ public partial class OrderBookData : ObservableObject
 
     public string PressureLabel => BidAskRatio switch
     {
-        > 1.3m => "Starker Kaufdruck",
-        > 1.05m => "Kaufdruck",
-        >= 0.95m => "Neutral",
-        >= 0.7m => "Verkaufsdruck",
-        _ => "Starker Verkaufsdruck"
+        > 1.3m => Loc.T("orderbook.strongbuy"),
+        > 1.05m => Loc.T("orderbook.buy"),
+        >= 0.95m => Loc.T("orderbook.neutral"),
+        >= 0.7m => Loc.T("orderbook.sell"),
+        _ => Loc.T("orderbook.strongsell")
     };
 
     public string PressureColor => BidAskRatio switch
@@ -35,4 +36,6 @@ public partial class OrderBookData : ObservableObject
     public string BidPercentFormatted => $"{BidPercent:N1}%";
     public string AskPercentFormatted => $"{AskPercent:N1}%";
     public string RatioFormatted => $"{BidAskRatio:N2}";
+
+    public void RefreshLocalization() => OnPropertyChanged(nameof(PressureLabel));
 }

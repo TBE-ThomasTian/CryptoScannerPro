@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CryptoScanner.Services;
 
 namespace CryptoScanner.Models;
 
@@ -38,11 +39,11 @@ public partial class CryptoCoin : ObservableObject
 
     public string SignalText => Signal switch
     {
-        SignalType.StarkerKauf => "Starker Kauf",
-        SignalType.Kauf => "Kauf",
-        SignalType.Halten => "Halten",
-        SignalType.Verkauf => "Verkauf",
-        SignalType.StarkerVerkauf => "Starker Verkauf",
+        SignalType.StarkerKauf => Loc.T("signal.strongbuy"),
+        SignalType.Kauf => Loc.T("signal.buy"),
+        SignalType.Halten => Loc.T("signal.hold"),
+        SignalType.Verkauf => Loc.T("signal.sell"),
+        SignalType.StarkerVerkauf => Loc.T("signal.strongsell"),
         _ => "N/A"
     };
 
@@ -74,9 +75,9 @@ public partial class CryptoCoin : ObservableObject
 
     public string StrategyActionColor => StrategyAction switch
     {
-        var s when s.StartsWith("Kaufen") => "#00D4AA",
-        var s when s.StartsWith("Verkaufen") => "#FF4757",
-        "Halten" => "#F0B90B",
+        var s when s.StartsWith("Kauf", StringComparison.OrdinalIgnoreCase) || s.StartsWith("Buy", StringComparison.OrdinalIgnoreCase) => "#00D4AA",
+        var s when s.StartsWith("Verkauf", StringComparison.OrdinalIgnoreCase) || s.StartsWith("Sell", StringComparison.OrdinalIgnoreCase) => "#FF4757",
+        var s when string.Equals(s, "Halten", StringComparison.OrdinalIgnoreCase) || string.Equals(s, "Hold", StringComparison.OrdinalIgnoreCase) => "#F0B90B",
         _ => "#8B949E"
     };
 
@@ -94,7 +95,7 @@ public partial class CryptoCoin : ObservableObject
                 return "-";
 
             if (Signal == SignalType.Verkauf || Signal == SignalType.StarkerVerkauf)
-                return "Nicht kaufen";
+                return Loc.T("buyzone.nobuy");
 
             var supports = new List<decimal> { CurrentPrice * 0.98m };
             if (Indicators?.Sma20 > 0) supports.Add(Indicators.Sma20);
@@ -108,12 +109,12 @@ public partial class CryptoCoin : ObservableObject
             var zoneHigh = Math.Min(CurrentPrice, valid.Max());
 
             if (Signal == SignalType.StarkerKauf && zoneHigh >= CurrentPrice * 0.995m)
-                return $"Jetzt ({FormatPrice(CurrentPrice)})";
+                return string.Format(Loc.T("buyzone.now"), FormatPrice(CurrentPrice));
 
             if (Signal == SignalType.Kauf || Signal == SignalType.StarkerKauf)
                 return $"{FormatPrice(zoneLow)} - {FormatPrice(zoneHigh)}";
 
-            return $"Unter {FormatPrice(zoneHigh)}";
+            return string.Format(Loc.T("buyzone.below"), FormatPrice(zoneHigh));
         }
     }
 
@@ -132,10 +133,14 @@ public partial class CryptoCoin : ObservableObject
 
     private void NotifyDerivedProperties()
     {
+        OnPropertyChanged(nameof(SignalText));
         OnPropertyChanged(nameof(PriceFormatted));
         OnPropertyChanged(nameof(BuyZoneText));
         OnPropertyChanged(nameof(BuyZoneColor));
+        OnPropertyChanged(nameof(StrategyActionColor));
     }
+
+    public void RefreshLocalization() => NotifyDerivedProperties();
 
     private string FormatPrice(decimal price)
     {

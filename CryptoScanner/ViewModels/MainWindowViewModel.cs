@@ -100,6 +100,7 @@ public partial class MainWindowViewModel : ObservableObject
             if (TradeCoin == null || TradeCoin.CurrentPrice <= 0) return "";
             var sym = TradeCoin.CurrencySymbol;
             var feeRate = _portfolioService.TradingFeeRate;
+            var feeLabel = Loc.Language == "en" ? "Fee" : "Gebuehr";
             if (TradeByValue)
             {
                 if (decimal.TryParse(TradeValueInput?.Replace(",", "."),
@@ -107,7 +108,7 @@ public partial class MainWindowViewModel : ObservableObject
                     System.Globalization.CultureInfo.InvariantCulture, out var val) && val > 0)
                 {
                     var fee = val * feeRate;
-                    return $"= {val / TradeCoin.CurrentPrice:N6} {TradeCoin.DisplayName} | Gebuehr {sym}{fee:N2}";
+                    return $"= {val / TradeCoin.CurrentPrice:N6} {TradeCoin.DisplayName} | {feeLabel} {sym}{fee:N2}";
                 }
             }
             else
@@ -119,9 +120,9 @@ public partial class MainWindowViewModel : ObservableObject
                     var gross = amt * TradeCoin.CurrentPrice;
                     var fee = gross * feeRate;
                     if (ShowBuyDialog)
-                        return $"= {sym}{gross:N2} + Gebuehr {sym}{fee:N2} = {sym}{gross + fee:N2}";
+                        return $"= {sym}{gross:N2} + {feeLabel} {sym}{fee:N2} = {sym}{gross + fee:N2}";
                     if (ShowSellDialog)
-                        return $"= {sym}{gross:N2} - Gebuehr {sym}{fee:N2} = {sym}{gross - fee:N2}";
+                        return $"= {sym}{gross:N2} - {feeLabel} {sym}{fee:N2} = {sym}{gross - fee:N2}";
                 }
             }
             return "";
@@ -133,7 +134,9 @@ public partial class MainWindowViewModel : ObservableObject
         get
         {
             if (ShowBuyDialog && TradeCoin != null)
-                return $"Max inkl. {PortfolioFeeRateText} Gebuehr: {Portfolio.CurrencySymbol}{Portfolio.Balance:N2}";
+                return Loc.Language == "en"
+                    ? $"Max incl. {PortfolioFeeRateText} fee: {Portfolio.CurrencySymbol}{Portfolio.Balance:N2}"
+                    : $"Max inkl. {PortfolioFeeRateText} Gebuehr: {Portfolio.CurrencySymbol}{Portfolio.Balance:N2}";
             if (ShowSellDialog && SellPosition != null)
                 return $"Max: {SellPosition.Amount:N6} {SellPosition.Symbol}";
             return "";
@@ -141,7 +144,9 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     public string PortfolioFeeRateText => _portfolioService.TradingFeeRatePercent;
-    public string PortfolioFeeInfo => $"Paper-Gebuehr: {PortfolioFeeRateText} pro Kauf/Verkauf (Kraken-aehnlich)";
+    public string PortfolioFeeInfo => Loc.Language == "en"
+        ? $"Paper fee: {PortfolioFeeRateText} per buy/sell (Kraken-like)"
+        : $"Paper-Gebuehr: {PortfolioFeeRateText} pro Kauf/Verkauf (Kraken-aehnlich)";
     public bool IsEditingConditionBlock => EditingStrategyBlock?.Type == BlockType.Condition;
     public bool IsEditingActionBlock => EditingStrategyBlock?.Type == BlockType.ActionBuy || EditingStrategyBlock?.Type == BlockType.ActionSell;
     public bool IsEditingAlarmBlock => EditingStrategyBlock?.Type == BlockType.ActionAlarm;
@@ -236,20 +241,139 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<string> AiProviderOptions { get; } = new()
     { "ChatGPT", "Claude" };
 
-    private static int ParseIntervalMinutes(string interval) => interval switch
+    private static int ParseIntervalMinutes(string interval) => NormalizeIntervalOption(interval) switch
     {
-        "1 Min" => 1, "2 Min" => 2, "5 Min" => 5,
-        "10 Min" => 10, "15 Min" => 15, "30 Min" => 30, _ => 2
+        "1m" => 1,
+        "2m" => 2,
+        "5m" => 5,
+        "10m" => 10,
+        "15m" => 15,
+        "30m" => 30,
+        _ => 2
     };
 
-    private static (int Interval, int Days) ParseTimeframe(string tf) => tf switch
+    private static (int Interval, int Days) ParseTimeframe(string tf) => NormalizeTimeframeOption(tf) switch
     {
         "24h" => (60, 1),
-        "7 Tage" => (60, 7),
-        "1 Monat" => (240, 30),
-        "3 Monate" => (1440, 90),
-        "1 Jahr" => (1440, 365),
+        "7d" => (60, 7),
+        "1m" => (240, 30),
+        "3m" => (1440, 90),
+        "1y" => (1440, 365),
         _ => (60, 7)
+    };
+
+    private static string NormalizeFilterOption(string? value) => value switch
+    {
+        "All" or "Alle" => "all",
+        "Strong Buy" or "Starker Kauf" => "strongbuy",
+        "Buy" or "Kauf" => "buy",
+        "Hold" or "Halten" => "hold",
+        "Sell" or "Verkauf" => "sell",
+        "Strong Sell" or "Starker Verkauf" => "strongsell",
+        _ => "all"
+    };
+
+    private static string NormalizeSortOption(string? value) => value switch
+    {
+        "Price" or "Preis" => "price",
+        "24h%" => "change",
+        "Score" => "score",
+        _ => "name"
+    };
+
+    private static string NormalizeIntervalOption(string? value) => value switch
+    {
+        "1 Min" or "1 min" => "1m",
+        "2 Min" or "2 min" => "2m",
+        "5 Min" or "5 min" => "5m",
+        "10 Min" or "10 min" => "10m",
+        "15 Min" or "15 min" => "15m",
+        "30 Min" or "30 min" => "30m",
+        _ => "2m"
+    };
+
+    private static string NormalizeTimeframeOption(string? value) => value switch
+    {
+        "24h" => "24h",
+        "7 Days" or "7 Tage" => "7d",
+        "1 Month" or "1 Monat" => "1m",
+        "3 Months" or "3 Monate" => "3m",
+        "1 Year" or "1 Jahr" => "1y",
+        _ => "7d"
+    };
+
+    private static string NormalizePortfolioSortOption(string? value) => value switch
+    {
+        "Coin" => "coin",
+        "Amount" or "Menge" => "amount",
+        "Value" or "Wert" => "value",
+        "Invested" or "Investiert" => "invested",
+        "P/L" or "G/V" => "pnl",
+        _ => "pnlpct"
+    };
+
+    private static string NormalizeStrategyPreset(string? value) => value switch
+    {
+        "Conservative" or "Konservativ" => "conservative",
+        "Aggressive" or "Aggressiv" => "aggressive",
+        _ => "balanced"
+    };
+
+    private static string LocalizeFilterOption(string id) => id switch
+    {
+        "all" => Loc.Language == "en" ? "All" : "Alle",
+        "strongbuy" => Loc.T("signal.strongbuy"),
+        "buy" => Loc.T("signal.buy"),
+        "hold" => Loc.T("signal.hold"),
+        "sell" => Loc.T("signal.sell"),
+        "strongsell" => Loc.T("signal.strongsell"),
+        _ => Loc.Language == "en" ? "All" : "Alle"
+    };
+
+    private static string LocalizeSortOption(string id) => id switch
+    {
+        "price" => Loc.Language == "en" ? "Price" : "Preis",
+        "change" => "24h%",
+        "score" => "Score",
+        _ => Loc.Language == "en" ? "Name" : "Name"
+    };
+
+    private static string LocalizeIntervalOption(string id) => id switch
+    {
+        "1m" => Loc.Language == "en" ? "1 min" : "1 Min",
+        "2m" => Loc.Language == "en" ? "2 min" : "2 Min",
+        "5m" => Loc.Language == "en" ? "5 min" : "5 Min",
+        "10m" => Loc.Language == "en" ? "10 min" : "10 Min",
+        "15m" => Loc.Language == "en" ? "15 min" : "15 Min",
+        "30m" => Loc.Language == "en" ? "30 min" : "30 Min",
+        _ => Loc.Language == "en" ? "2 min" : "2 Min"
+    };
+
+    private static string LocalizeTimeframeOption(string id) => id switch
+    {
+        "24h" => "24h",
+        "7d" => Loc.Language == "en" ? "7 Days" : "7 Tage",
+        "1m" => Loc.Language == "en" ? "1 Month" : "1 Monat",
+        "3m" => Loc.Language == "en" ? "3 Months" : "3 Monate",
+        "1y" => Loc.Language == "en" ? "1 Year" : "1 Jahr",
+        _ => Loc.Language == "en" ? "7 Days" : "7 Tage"
+    };
+
+    private static string LocalizePortfolioSortOption(string id) => id switch
+    {
+        "coin" => "Coin",
+        "amount" => Loc.Language == "en" ? "Amount" : "Menge",
+        "value" => Loc.Language == "en" ? "Value" : "Wert",
+        "invested" => Loc.Language == "en" ? "Invested" : "Investiert",
+        "pnl" => Loc.Language == "en" ? "P/L" : "G/V",
+        _ => Loc.Language == "en" ? "P/L %" : "G/V %"
+    };
+
+    private static string LocalizeStrategyPreset(string id) => id switch
+    {
+        "conservative" => Loc.Language == "en" ? "Conservative" : "Konservativ",
+        "aggressive" => Loc.Language == "en" ? "Aggressive" : "Aggressiv",
+        _ => Loc.Language == "en" ? "Balanced" : "Ausgewogen"
     };
 
     public MainWindowViewModel()
@@ -271,9 +395,13 @@ public partial class MainWindowViewModel : ObservableObject
 
         // Initialize with RSI Momentum preset as the default template
         _currentStrategy = StrategyPresets.RsiMomentum();
+        Loc.LanguageChanged += HandleLanguageChanged;
+        RefreshLocalizedSelectionsAndOptions();
         ApplyStrategyFilterPreset(SelectedStrategyFilterPreset);
         PortfolioFeeRateInput = (_portfolioService.TradingFeeRate * 100m).ToString("N2");
         RefreshPortfolioPositions();
+        StatusText = Loc.T("status.ready");
+        LastUpdateTime = Loc.T("status.never");
 
         // Load persisted API key (decrypted)
         var savedKey = _secureStorage.LoadApiKey();
@@ -336,6 +464,88 @@ public partial class MainWindowViewModel : ObservableObject
             : "https://api.openai.com/v1/chat/completions";
     }
 
+    private void HandleLanguageChanged()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            RefreshLocalizedSelectionsAndOptions();
+            RefreshLocalizedDataViews();
+            RefreshCoinsOnUiThread();
+            RefreshPortfolioPositions();
+            OnPropertyChanged(nameof(TradePreview));
+            OnPropertyChanged(nameof(TradeMaxInfo));
+            OnPropertyChanged(nameof(PortfolioFeeInfo));
+            OnPropertyChanged(nameof(PortfolioFeeRateText));
+            OnPropertyChanged(nameof(StrategyBlockEditorTitle));
+        });
+    }
+
+    private void RefreshLocalizedSelectionsAndOptions()
+    {
+        RefreshLocalizedOptionCollection(FilterOptions, new[] { "all", "strongbuy", "buy", "hold", "sell", "strongsell" }, LocalizeFilterOption);
+        RefreshLocalizedOptionCollection(SortOptions, new[] { "name", "price", "change", "score" }, LocalizeSortOption);
+        RefreshLocalizedOptionCollection(IntervalOptions, new[] { "1m", "2m", "5m", "10m", "15m", "30m" }, LocalizeIntervalOption);
+        RefreshLocalizedOptionCollection(TimeframeOptions, new[] { "24h", "7d", "1m", "3m", "1y" }, LocalizeTimeframeOption);
+        RefreshLocalizedOptionCollection(PortfolioSortOptions, new[] { "pnlpct", "pnl", "value", "invested", "coin", "amount" }, LocalizePortfolioSortOption);
+        RefreshLocalizedOptionCollection(StrategyFilterPresets, new[] { "conservative", "balanced", "aggressive" }, LocalizeStrategyPreset);
+
+        SelectedFilter = LocalizeFilterOption(NormalizeFilterOption(SelectedFilter));
+        SelectedSort = LocalizeSortOption(NormalizeSortOption(SelectedSort));
+        SelectedInterval = LocalizeIntervalOption(NormalizeIntervalOption(SelectedInterval));
+        SelectedTimeframe = LocalizeTimeframeOption(NormalizeTimeframeOption(SelectedTimeframe));
+        SelectedPortfolioSort = LocalizePortfolioSortOption(NormalizePortfolioSortOption(SelectedPortfolioSort));
+        SelectedStrategyFilterPreset = LocalizeStrategyPreset(NormalizeStrategyPreset(SelectedStrategyFilterPreset));
+
+        if (StatusText is "Bereit" or "Ready")
+            StatusText = Loc.T("status.ready");
+        if (LastUpdateTime is "Nie" or "Never")
+            LastUpdateTime = Loc.T("status.never");
+    }
+
+    private static void RefreshLocalizedOptionCollection(
+        ObservableCollection<string> collection,
+        IEnumerable<string> keys,
+        Func<string, string> localize)
+    {
+        collection.Clear();
+        foreach (var key in keys)
+            collection.Add(localize(key));
+    }
+
+    private void RefreshLocalizedDataViews()
+    {
+        foreach (var coin in _allCoins)
+        {
+            coin.RefreshLocalization();
+            coin.OrderBook?.RefreshLocalization();
+            if (coin.StrategyAction == "Halten" || coin.StrategyAction == "Hold")
+                coin.StrategyAction = Loc.T("strategy.action.hold");
+        }
+
+        if (SelectedCoin != null)
+            OnPropertyChanged(nameof(SelectedCoin));
+
+        var aiOrders = AiRecommendations.ToList();
+        AiRecommendations.Clear();
+        foreach (var order in aiOrders)
+            AiRecommendations.Add(order);
+
+        var strategyOrders = StrategyResults.ToList();
+        StrategyResults.Clear();
+        foreach (var order in strategyOrders)
+            StrategyResults.Add(order);
+
+        var transactions = Portfolio.TransactionHistory.ToList();
+        Portfolio.TransactionHistory.Clear();
+        foreach (var tx in transactions)
+            Portfolio.TransactionHistory.Add(tx);
+
+        foreach (var block in CurrentStrategy.Blocks)
+            block.RefreshLocalization();
+
+        OnPropertyChanged(nameof(CurrentStrategy));
+    }
+
     // ── Auto refresh ───────────────────────────────────────────
     private void StartAutoRefresh()
     {
@@ -380,24 +590,24 @@ public partial class MainWindowViewModel : ObservableObject
                 c.PairName.ToUpperInvariant().Contains(search));
         }
 
-        if (!string.IsNullOrEmpty(SelectedFilter) && SelectedFilter != "Alle")
+        if (!string.IsNullOrEmpty(SelectedFilter) && NormalizeFilterOption(SelectedFilter) != "all")
         {
-            filtered = SelectedFilter switch
+            filtered = NormalizeFilterOption(SelectedFilter) switch
             {
-                "Starker Kauf" => filtered.Where(c => c.Signal == SignalType.StarkerKauf),
-                "Kauf" => filtered.Where(c => c.Signal == SignalType.Kauf),
-                "Halten" => filtered.Where(c => c.Signal == SignalType.Halten),
-                "Verkauf" => filtered.Where(c => c.Signal == SignalType.Verkauf),
-                "Starker Verkauf" => filtered.Where(c => c.Signal == SignalType.StarkerVerkauf),
+                "strongbuy" => filtered.Where(c => c.Signal == SignalType.StarkerKauf),
+                "buy" => filtered.Where(c => c.Signal == SignalType.Kauf),
+                "hold" => filtered.Where(c => c.Signal == SignalType.Halten),
+                "sell" => filtered.Where(c => c.Signal == SignalType.Verkauf),
+                "strongsell" => filtered.Where(c => c.Signal == SignalType.StarkerVerkauf),
                 _ => filtered
             };
         }
 
-        filtered = (SelectedSort ?? "Name") switch
+        filtered = NormalizeSortOption(SelectedSort) switch
         {
-            "Preis" => SortAscending ? filtered.OrderBy(c => c.CurrentPrice) : filtered.OrderByDescending(c => c.CurrentPrice),
-            "24h%" => SortAscending ? filtered.OrderBy(c => c.Change24hPercent) : filtered.OrderByDescending(c => c.Change24hPercent),
-            "Score" => SortAscending ? filtered.OrderBy(c => c.CompositeScore) : filtered.OrderByDescending(c => c.CompositeScore),
+            "price" => SortAscending ? filtered.OrderBy(c => c.CurrentPrice) : filtered.OrderByDescending(c => c.CurrentPrice),
+            "change" => SortAscending ? filtered.OrderBy(c => c.Change24hPercent) : filtered.OrderByDescending(c => c.Change24hPercent),
+            "score" => SortAscending ? filtered.OrderBy(c => c.CompositeScore) : filtered.OrderByDescending(c => c.CompositeScore),
             _ => SortAscending ? filtered.OrderBy(c => c.DisplayName) : filtered.OrderByDescending(c => c.DisplayName)
         };
 
@@ -794,7 +1004,7 @@ public partial class MainWindowViewModel : ObservableObject
             if (orderMap.TryGetValue(coin.DisplayName, out var order))
                 coin.StrategyAction = order.ActionText + (order.Action != TradeAction.Hold ? $" {order.Amount:N4}" : "");
             else
-                coin.StrategyAction = "Halten";
+                coin.StrategyAction = Loc.T("strategy.action.hold");
         }
     }
 
@@ -845,7 +1055,9 @@ public partial class MainWindowViewModel : ObservableObject
 
         CurrentStrategy.Blocks.Add(block);
         OnPropertyChanged(nameof(CurrentStrategy));
-        StrategyStatusText = $"Block \"{block.Title}\" hinzugefuegt";
+        StrategyStatusText = Loc.Language == "en"
+            ? $"Block \"{block.Title}\" added"
+            : $"Block \"{block.Title}\" hinzugefuegt";
     }
 
     private (double X, double Y) FindNextStrategyBlockPosition()
@@ -1428,21 +1640,21 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void RefreshPortfolioPositions()
     {
-        var sorted = (SelectedPortfolioSort ?? "G/V %") switch
+        var sorted = NormalizePortfolioSortOption(SelectedPortfolioSort) switch
         {
-            "Coin" => PortfolioSortAscending
+            "coin" => PortfolioSortAscending
                 ? Portfolio.Positions.OrderBy(p => p.Symbol)
                 : Portfolio.Positions.OrderByDescending(p => p.Symbol),
-            "Menge" => PortfolioSortAscending
+            "amount" => PortfolioSortAscending
                 ? Portfolio.Positions.OrderBy(p => p.Amount)
                 : Portfolio.Positions.OrderByDescending(p => p.Amount),
-            "Wert" => PortfolioSortAscending
+            "value" => PortfolioSortAscending
                 ? Portfolio.Positions.OrderBy(p => p.TotalValue)
                 : Portfolio.Positions.OrderByDescending(p => p.TotalValue),
-            "Investiert" => PortfolioSortAscending
+            "invested" => PortfolioSortAscending
                 ? Portfolio.Positions.OrderBy(p => p.TotalCost)
                 : Portfolio.Positions.OrderByDescending(p => p.TotalCost),
-            "G/V" => PortfolioSortAscending
+            "pnl" => PortfolioSortAscending
                 ? Portfolio.Positions.OrderBy(p => p.ProfitLoss)
                 : Portfolio.Positions.OrderByDescending(p => p.ProfitLoss),
             _ => PortfolioSortAscending
@@ -1462,21 +1674,21 @@ public partial class MainWindowViewModel : ObservableObject
     {
         var lines = new List<string>
         {
-            "CryptoScanner Depotliste",
-            $"Datum: {DateTime.Now:dd.MM.yyyy HH:mm}",
-            $"Barguthaben: {Portfolio.BalanceFormatted}",
-            $"Gesamtwert: {Portfolio.TotalValueFormatted}",
-            $"Gewinn/Verlust: {Portfolio.ProfitLossFormatted} ({Portfolio.ProfitLossPercentFormatted})",
+            Loc.Language == "en" ? "CryptoScanner Portfolio List" : "CryptoScanner Depotliste",
+            $"{Loc.T("date")}: {DateTime.Now:dd.MM.yyyy HH:mm}",
+            $"{Loc.T("depot.balance")}: {Portfolio.BalanceFormatted}",
+            $"{Loc.T("depot.totalvalue")}: {Portfolio.TotalValueFormatted}",
+            $"{Loc.T("depot.pnl")}: {Portfolio.ProfitLossFormatted} ({Portfolio.ProfitLossPercentFormatted})",
             ""
         };
 
         if (SortedPortfolioPositions.Count == 0)
         {
-            lines.Add("Keine Positionen vorhanden.");
+            lines.Add(Loc.Language == "en" ? "No positions available." : "Keine Positionen vorhanden.");
         }
         else
         {
-            lines.Add("COIN | MENGE | INVESTIERT | WERT | G/V");
+            lines.Add($"COIN | {Loc.T("amount").ToUpperInvariant()} | {Loc.T("col.invested")} | {Loc.T("col.value")} | {Loc.T("col.pnlshort")}");
             foreach (var position in SortedPortfolioPositions)
             {
                 lines.Add($"{position.Symbol} | {position.AmountFormatted} | {position.TotalCost:N2} | {position.TotalValueFormatted} | {position.ProfitLossPercentFormatted}");
@@ -1484,7 +1696,9 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         WriteSimplePdf(path, lines);
-        StatusText = $"Depotliste als PDF exportiert: {path}";
+        StatusText = Loc.Language == "en"
+            ? $"Portfolio list exported as PDF: {path}"
+            : $"Depotliste als PDF exportiert: {path}";
     }
 
     private static void WriteSimplePdf(string path, List<string> lines)
@@ -1554,9 +1768,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ApplyStrategyFilterPreset(string? preset)
     {
-        switch (preset)
+        switch (NormalizeStrategyPreset(preset))
         {
-            case "Konservativ":
+            case "conservative":
                 StrategyRequirePositiveDayChange = true;
                 StrategyRequireAboveSma50 = true;
                 StrategyRequirePositiveMacd = true;
@@ -1565,7 +1779,7 @@ public partial class MainWindowViewModel : ObservableObject
                 StrategySkipExistingPositions = true;
                 StrategyPreferTopScoreBuys = true;
                 break;
-            case "Aggressiv":
+            case "aggressive":
                 StrategyRequirePositiveDayChange = false;
                 StrategyRequireAboveSma50 = false;
                 StrategyRequirePositiveMacd = false;
@@ -1590,9 +1804,11 @@ public partial class MainWindowViewModel : ObservableObject
     private void NewStrategy()
     {
         CurrentStrategy = StrategyPresets.RsiMomentum();
-        CurrentStrategy.Name = "Neue Strategie";
+        CurrentStrategy.Name = Loc.T("strategy.name.new");
         StrategyResults.Clear();
-        StrategyStatusText = "Neue Strategie erstellt (RSI Momentum Vorlage)";
+        StrategyStatusText = Loc.Language == "en"
+            ? "New strategy created (RSI Momentum template)"
+            : "Neue Strategie erstellt (RSI Momentum Vorlage)";
     }
 
     public void OpenStrategyBlockEditor(StrategyBlock block)
@@ -1636,7 +1852,9 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         ShowStrategyBlockEditor = false;
-        StrategyStatusText = $"Block \"{block.Title}\" aktualisiert";
+        StrategyStatusText = Loc.Language == "en"
+            ? $"Block \"{block.Title}\" updated"
+            : $"Block \"{block.Title}\" aktualisiert";
         OnPropertyChanged(nameof(CurrentStrategy));
     }
 

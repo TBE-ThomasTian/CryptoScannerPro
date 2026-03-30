@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CryptoScanner.Services;
 
 namespace CryptoScanner.Models;
 
@@ -21,24 +22,24 @@ public partial class StrategyBlock : ObservableObject
     // Display helpers
     public string Title => Type switch
     {
-        BlockType.Start => "START",
+        BlockType.Start => Loc.T("strategy.block.start"),
         BlockType.Condition => Category,
-        BlockType.ActionBuy => "KAUFEN",
-        BlockType.ActionSell => "VERKAUFEN",
-        BlockType.ActionHold => "HALTEN",
-        BlockType.ActionAlarm => "ALARM",
+        BlockType.ActionBuy => Loc.T("strategy.block.buy"),
+        BlockType.ActionSell => Loc.T("strategy.block.sell"),
+        BlockType.ActionHold => Loc.T("strategy.block.hold"),
+        BlockType.ActionAlarm => Loc.T("strategy.block.alarm"),
         _ => "?"
     };
 
     public string Description => Type switch
     {
-        BlockType.Start => "Einstiegspunkt (1 Ausgang)",
+        BlockType.Start => Loc.T("strategy.block.startdesc"),
         BlockType.Condition when !string.IsNullOrEmpty(ConditionPreset) => ConditionPreset,
         BlockType.Condition => $"{Category} {Operator} {Value}",
-        BlockType.ActionBuy => $"Kaufen: {ActionAmount}",
-        BlockType.ActionSell => $"Verkaufen: {ActionAmount}",
-        BlockType.ActionHold => "Position halten",
-        BlockType.ActionAlarm => string.IsNullOrEmpty(AlarmText) ? "Benachrichtigung" : AlarmText,
+        BlockType.ActionBuy => string.Format(Loc.T("strategy.block.buydesc"), ActionAmount),
+        BlockType.ActionSell => string.Format(Loc.T("strategy.block.selldesc"), ActionAmount),
+        BlockType.ActionHold => Loc.T("strategy.block.holddesc"),
+        BlockType.ActionAlarm => string.IsNullOrEmpty(AlarmText) ? Loc.T("strategy.block.alarmdesc") : AlarmText,
         _ => ""
     };
 
@@ -67,6 +68,20 @@ public partial class StrategyBlock : ObservableObject
     public bool IsCondition => Type == BlockType.Condition;
     public bool HasInput => Type != BlockType.Start;
     public int OutputCount => Type == BlockType.Condition ? 2 : 1;  // Ja/Nein vs Out
+
+    partial void OnTypeChanged(BlockType value) => RefreshLocalization();
+    partial void OnActionAmountChanged(string value) => RefreshLocalization();
+    partial void OnAlarmTextChanged(string value) => RefreshLocalization();
+    partial void OnConditionPresetChanged(string value) => RefreshLocalization();
+    partial void OnOperatorChanged(string value) => RefreshLocalization();
+    partial void OnValueChanged(double value) => RefreshLocalization();
+    partial void OnCategoryChanged(string value) => RefreshLocalization();
+
+    public void RefreshLocalization()
+    {
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(Description));
+    }
 }
 
 public class StrategyConnection
@@ -79,9 +94,14 @@ public class StrategyConnection
 
 public partial class TradingStrategy : ObservableObject
 {
-    [ObservableProperty] private string _name = "Neue Strategie";
+    [ObservableProperty] private string _name = "";
     [ObservableProperty] private bool _isActive;
     public List<StrategyBlock> Blocks { get; set; } = new();
     public List<StrategyConnection> Connections { get; set; } = new();
     public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+    public TradingStrategy()
+    {
+        Name = Loc.T("strategy.name.new");
+    }
 }

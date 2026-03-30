@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="using:CryptoScanner.Views"
         xmlns:models="using:CryptoScanner.Models"
+        xmlns:services="using:CryptoScanner.Services"
         x:Class="CryptoScanner.Views.MainWindow"
         Title="CryptoScanner"
         Width="1500" Height="950"
@@ -106,33 +107,33 @@
 
                 <!-- Tab buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Button Content="Scanner" Padding="16,6"
+                    <Button Content="{Binding [tab.scanner], Source={x:Static services:Loc.Instance}}" Padding="16,6"
                             Command="{Binding SelectTabCommand}" CommandParameter="0"
                             Foreground="#F0F6FC" FontWeight="SemiBold"
-                            ToolTip.Tip="Krypto-Scanner und technische Analyse"/>
-                    <Button Content="Depot" Padding="16,6"
+                            ToolTip.Tip="{Binding [tab.scanner], Source={x:Static services:Loc.Instance}}"/>
+                    <Button Content="{Binding [tab.depot], Source={x:Static services:Loc.Instance}}" Padding="16,6"
                             Command="{Binding SelectTabCommand}" CommandParameter="1"
                             Foreground="#F0F6FC"
-                            ToolTip.Tip="Paper-Trading Depot mit Positionen und Historie"/>
-                    <Button Content="KI-Trading" Padding="16,6"
+                            ToolTip.Tip="{Binding [tab.depot], Source={x:Static services:Loc.Instance}}"/>
+                    <Button Content="{Binding [tab.ai], Source={x:Static services:Loc.Instance}}" Padding="16,6"
                             Command="{Binding SelectTabCommand}" CommandParameter="2"
                             Foreground="#F0F6FC"
-                            ToolTip.Tip="KI-gestuetzte Handelsempfehlungen (ChatGPT/Claude)"/>
-                    <Button Content="Strategie" Padding="16,6"
+                            ToolTip.Tip="{Binding [tab.ai], Source={x:Static services:Loc.Instance}}"/>
+                    <Button Content="{Binding [tab.strategy], Source={x:Static services:Loc.Instance}}" Padding="16,6"
                             Command="{Binding SelectTabCommand}" CommandParameter="3"
                             Foreground="#F0F6FC"
-                            ToolTip.Tip="Visueller Strategie-Editor (Blueprint-Stil)"/>
+                            ToolTip.Tip="{Binding [tab.strategy], Source={x:Static services:Loc.Instance}}"/>
                 </StackPanel>
 
                 <!-- Language switcher + update time -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Button Content="? Hilfe" Padding="10,5" FontSize="10"
+                    <Button Content="{Binding [help.button], Source={x:Static services:Loc.Instance}}" Padding="10,5" FontSize="10"
                             Command="{Binding OpenHelpCommand}"
-                            ToolTip.Tip="Kurze Erklaerung der wichtigsten Funktionen"/>
+                            ToolTip.Tip="{Binding [help], Source={x:Static services:Loc.Instance}}"/>
                     <ComboBox ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding SelectedLanguage}"
                               Width="55" Height="26" FontSize="10" VerticalAlignment="Center"
-                              ToolTip.Tip="Sprache / Language"/>
-                    <TextBlock Text="{Binding LastUpdateTime, StringFormat=Update: {0}}"
+                              ToolTip.Tip="Language"/>
+                    <TextBlock Text="{Binding LastUpdateTime}"
                                FontSize="11" Foreground="#484F58" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
@@ -144,32 +145,32 @@
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Classes="accent" Command="{Binding ScanCommand}"
                         IsVisible="{Binding IsScanning, Converter={StaticResource InverseBool}}"
-                        ToolTip.Tip="Alle Coins scannen und technisch analysieren">
-                    <TextBlock Text="Scan Starten" Foreground="#0D1117" FontWeight="SemiBold"/>
+                        ToolTip.Tip="{Binding [scan.start.tip], Source={x:Static services:Loc.Instance}}">
+                    <TextBlock Text="{Binding [scan.start], Source={x:Static services:Loc.Instance}}" Foreground="#0D1117" FontWeight="SemiBold"/>
                 </Button>
                 <Button Classes="stop" Command="{Binding StopScanCommand}" IsVisible="{Binding IsScanning}"
-                        ToolTip.Tip="Laufenden Scan abbrechen">
-                    <TextBlock Text="Abbrechen" Foreground="White"/>
+                        ToolTip.Tip="{Binding [scan.stop.tip], Source={x:Static services:Loc.Instance}}">
+                    <TextBlock Text="{Binding [scan.stop], Source={x:Static services:Loc.Instance}}" Foreground="White"/>
                 </Button>
                 <Border Width="1" Background="#21262D" Margin="2,0"/>
                 <ComboBox ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding SelectedCurrency}" Width="65"
-                          ToolTip.Tip="Handelswaehrung auswaehlen (USD oder EUR)"/>
-                <TextBox Watermark="Suchen..." Text="{Binding SearchText}" Width="150" Height="32"
-                         ToolTip.Tip="Nach Coin-Name oder Symbol suchen"/>
+                          ToolTip.Tip="{Binding [scan.currency.tip], Source={x:Static services:Loc.Instance}}"/>
+                <TextBox Watermark="{Binding [search.watermark], Source={x:Static services:Loc.Instance}}" Text="{Binding SearchText}" Width="150" Height="32"
+                         ToolTip.Tip="{Binding [search.tip], Source={x:Static services:Loc.Instance}}"/>
                 <Border Width="1" Background="#21262D" Margin="2,0"/>
                 <ComboBox ItemsSource="{Binding FilterOptions}" SelectedItem="{Binding SelectedFilter}" Width="110"
-                          ToolTip.Tip="Nur Coins mit bestimmtem Signal anzeigen"/>
+                          ToolTip.Tip="{Binding [filter.tip], Source={x:Static services:Loc.Instance}}"/>
                 <ComboBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}" Width="80"
-                          ToolTip.Tip="Tabelle nach gewaehltem Kriterium sortieren"/>
-                <Button Command="{Binding ToggleSortDirectionCommand}" Padding="6,5" Content="A/Z" FontSize="10"
-                        ToolTip.Tip="Sortierrichtung umkehren (aufsteigend/absteigend)"/>
+                          ToolTip.Tip="{Binding [sort.tip], Source={x:Static services:Loc.Instance}}"/>
+                <Button Command="{Binding ToggleSortDirectionCommand}" Padding="6,5" Content="{Binding [sort.direction], Source={x:Static services:Loc.Instance}}" FontSize="10"
+                        ToolTip.Tip="{Binding [sort.direction.tip], Source={x:Static services:Loc.Instance}}"/>
                 <Border Width="1" Background="#21262D" Margin="2,0"/>
                 <ComboBox ItemsSource="{Binding TimeframeOptions}" SelectedItem="{Binding SelectedTimeframe}" Width="95"
-                          ToolTip.Tip="Zeitraum fuer Diagramm und technische Analyse. Beim Wechsel wird automatisch neu gescannt."/>
+                          ToolTip.Tip="{Binding [timeframe.tip], Source={x:Static services:Loc.Instance}}"/>
                 <CheckBox Content="Auto" IsChecked="{Binding IsAutoRefreshEnabled}" VerticalAlignment="Center"
-                          ToolTip.Tip="Automatisch in regelmaessigen Abstaenden neu scannen"/>
+                          ToolTip.Tip="{Binding [autorefresh.tip], Source={x:Static services:Loc.Instance}}"/>
                 <ComboBox ItemsSource="{Binding IntervalOptions}" SelectedItem="{Binding SelectedInterval}" Width="70"
-                          ToolTip.Tip="Intervall fuer automatische Aktualisierung"/>
+                          ToolTip.Tip="{Binding [interval.tip], Source={x:Static services:Loc.Instance}}"/>
             </StackPanel>
         </Border>
 
@@ -193,9 +194,9 @@
                               IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
                               Background="#0D1117" HeadersVisibility="Column" SelectionMode="Single">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="COIN" Binding="{Binding DisplayName}" Width="100"/>
-                            <DataGridTextColumn Header="PREIS" Binding="{Binding PriceFormatted}" Width="140"/>
-                            <DataGridTemplateColumn Header="24H %" Width="100">
+                            <DataGridTextColumn Header="{Binding [col.coin], Source={x:Static services:Loc.Instance}}" Binding="{Binding DisplayName}" Width="100"/>
+                            <DataGridTextColumn Header="{Binding [col.price], Source={x:Static services:Loc.Instance}}" Binding="{Binding PriceFormatted}" Width="140"/>
+                            <DataGridTemplateColumn Header="{Binding [col.change], Source={x:Static services:Loc.Instance}}" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Change24hFormatted}"
@@ -204,8 +205,8 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="SCORE" Binding="{Binding ScoreFormatted}" Width="75"/>
-                            <DataGridTemplateColumn Header="SIGNAL" Width="130">
+                            <DataGridTextColumn Header="{Binding [col.score], Source={x:Static services:Loc.Instance}}" Binding="{Binding ScoreFormatted}" Width="75"/>
+                            <DataGridTemplateColumn Header="{Binding [col.signal], Source={x:Static services:Loc.Instance}}" Width="130">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border Background="{Binding SignalColor, Converter={StaticResource HexToBrush}}"
@@ -215,23 +216,23 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="KAUFZONE" Width="150">
+                            <DataGridTemplateColumn Header="{Binding [col.buyzone], Source={x:Static services:Loc.Instance}}" Width="150">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding BuyZoneText}"
                                                    Foreground="{Binding BuyZoneColor, Converter={StaticResource HexToBrush}}"
                                                    FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" Margin="8,0"
-                                                   ToolTip.Tip="Schaetzt aus aktuellem Kurs, SMA20 und Bollinger-Band eine sinnvolle Kaufzone."/>
+                                                   ToolTip.Tip="{Binding [col.buyzone], Source={x:Static services:Loc.Instance}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="MEINE STRATEGIE" Width="170">
+                            <DataGridTemplateColumn Header="{Binding [col.mystrategy], Source={x:Static services:Loc.Instance}}" Width="170">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding StrategyAction}"
                                                    Foreground="{Binding StrategyActionColor, Converter={StaticResource HexToBrush}}"
                                                    FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" Margin="8,0"
-                                                   ToolTip.Tip="Das sagt deine aktuell aktive Strategie zu diesem Coin, unabhaengig vom Scanner-Signal."/>
+                                                   ToolTip.Tip="{Binding [col.mystrategy], Source={x:Static services:Loc.Instance}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -241,8 +242,8 @@
                                         <Button Classes="accent" Padding="6,3" FontSize="10"
                                                 Command="{Binding $parent[Window].DataContext.OpenBuyDialogCommand}"
                                                 CommandParameter="{Binding}"
-                                                ToolTip.Tip="Diese Kryptowaehrung zum aktuellen Preis kaufen">
-                                            <TextBlock Text="Kaufen" Foreground="#0D1117" FontSize="10"/>
+                                                ToolTip.Tip="{Binding [buy.tip], Source={x:Static services:Loc.Instance}}">
+                                            <TextBlock Text="{Binding [buy], Source={x:Static services:Loc.Instance}}" Foreground="#0D1117" FontSize="10"/>
                                         </Button>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -278,24 +279,24 @@
 
                                             <!-- Row 1: Chart toggles -->
                                             <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,2,0,4">
-                                                <CheckBox Content="Kerzen" FontSize="10" Foreground="#F0F6FC"
+                                                <CheckBox Content="{Binding [chart.candles], Source={x:Static services:Loc.Instance}}" FontSize="10" Foreground="#F0F6FC"
                                                           IsChecked="{Binding $parent[Window].DataContext.ShowCandlesticks}"
-                                                          ToolTip.Tip="Zwischen Linien- und Kerzenchart umschalten"/>
+                                                          ToolTip.Tip="{Binding [chart.candles.tip], Source={x:Static services:Loc.Instance}}"/>
                                                 <CheckBox Content="SMA 20" FontSize="10" Foreground="#3B82F6"
                                                           IsChecked="{Binding $parent[Window].DataContext.ShowSma20}"
-                                                          ToolTip.Tip="Simple Moving Average 20 Perioden (kurzfristig)"/>
+                                                          ToolTip.Tip="{Binding [chart.sma20.tip], Source={x:Static services:Loc.Instance}}"/>
                                                 <CheckBox Content="SMA 50" FontSize="10" Foreground="#F59E0B"
                                                           IsChecked="{Binding $parent[Window].DataContext.ShowSma50}"
-                                                          ToolTip.Tip="Simple Moving Average 50 Perioden (mittelfristig)"/>
+                                                          ToolTip.Tip="{Binding [chart.sma50.tip], Source={x:Static services:Loc.Instance}}"/>
                                                 <CheckBox Content="EMA 12" FontSize="10" Foreground="#06B6D4"
                                                           IsChecked="{Binding $parent[Window].DataContext.ShowEma12}"
-                                                          ToolTip.Tip="Exponential Moving Average 12 Perioden"/>
+                                                          ToolTip.Tip="{Binding [chart.ema12.tip], Source={x:Static services:Loc.Instance}}"/>
                                                 <CheckBox Content="EMA 26" FontSize="10" Foreground="#D946EF"
                                                           IsChecked="{Binding $parent[Window].DataContext.ShowEma26}"
-                                                          ToolTip.Tip="Exponential Moving Average 26 Perioden"/>
+                                                          ToolTip.Tip="{Binding [chart.ema26.tip], Source={x:Static services:Loc.Instance}}"/>
                                                 <CheckBox Content="BB" FontSize="10" Foreground="#A78BFA"
                                                           IsChecked="{Binding $parent[Window].DataContext.ShowBollingerBands}"
-                                                          ToolTip.Tip="Bollinger Baender (20 Perioden, 2 Std.abw.)"/>
+                                                          ToolTip.Tip="{Binding [chart.bb.tip], Source={x:Static services:Loc.Instance}}"/>
                                             </StackPanel>
 
                                             <Border Grid.Row="2" Background="#161B22" CornerRadius="8" Padding="2" BorderBrush="#21262D" BorderThickness="1" MinHeight="150">
@@ -321,7 +322,7 @@
                                             <Border Background="#161B22" CornerRadius="8" Padding="14" BorderBrush="#21262D" BorderThickness="1">
                                                 <Grid ColumnDefinitions="*,Auto">
                                                     <StackPanel>
-                                                        <TextBlock Text="Bewertung" FontSize="11" Foreground="#8B949E"/>
+                                                        <TextBlock Text="{Binding [detail.score], Source={x:Static services:Loc.Instance}}" FontSize="11" Foreground="#8B949E"/>
                                                         <TextBlock Text="{Binding ScoreFormatted}" FontSize="30" FontWeight="Bold"
                                                                    Foreground="{Binding SignalColor, Converter={StaticResource HexToBrush}}"/>
                                                     </StackPanel>
@@ -336,12 +337,12 @@
                                             <Border Background="#161B22" CornerRadius="8" Padding="14" BorderBrush="#21262D" BorderThickness="1"
                                                     IsVisible="{Binding OrderBook, Converter={x:Static ObjectConverters.IsNotNull}}">
                                                 <StackPanel Spacing="8">
-                                                    <TextBlock Text="Orderbuch (Kauf-/Verkaufsdruck)" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding [detail.orderbook], Source={x:Static services:Loc.Instance}}" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
                                                     <Grid ColumnDefinitions="*,Auto,*">
-                                                        <TextBlock Text="{Binding OrderBook.BidPercentFormatted, StringFormat=Kaeufer {0}}"
+                                                        <TextBlock Text="{Binding OrderBook.BidPercentFormatted, StringFormat=Buy {0}}"
                                                                    Foreground="#00D4AA" FontWeight="Bold" FontSize="12"/>
                                                         <TextBlock Grid.Column="1" Text="|" Foreground="#21262D" Margin="6,0"/>
-                                                        <TextBlock Grid.Column="2" Text="{Binding OrderBook.AskPercentFormatted, StringFormat=Verkaeufer {0}}"
+                                                        <TextBlock Grid.Column="2" Text="{Binding OrderBook.AskPercentFormatted, StringFormat=Sell {0}}"
                                                                    Foreground="#FF4757" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
                                                     </Grid>
                                                     <!-- Bid/Ask bar -->
@@ -358,10 +359,10 @@
                                             <Border Background="#161B22" CornerRadius="8" Padding="14" BorderBrush="#21262D" BorderThickness="1"
                                                     IsVisible="{Binding Indicators, Converter={x:Static ObjectConverters.IsNotNull}}">
                                                 <StackPanel Spacing="6">
-                                                    <TextBlock Text="{Binding Indicators.PeriodLabel, StringFormat={}{0} Preisspanne}" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding [detail.pricerange], Source={x:Static services:Loc.Instance}}" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
                                                     <Grid ColumnDefinitions="*,*">
-                                                        <TextBlock Text="{Binding Indicators.PeriodHighFormatted, StringFormat=Hoch: {0}}" Foreground="#00D4AA" FontSize="12"/>
-                                                        <TextBlock Grid.Column="1" Text="{Binding Indicators.PeriodLowFormatted, StringFormat=Tief: {0}}" Foreground="#FF4757" FontSize="12" HorizontalAlignment="Right"/>
+                                                        <TextBlock Text="{Binding Indicators.PeriodHighFormatted, StringFormat=High: {0}}" Foreground="#00D4AA" FontSize="12"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Indicators.PeriodLowFormatted, StringFormat=Low: {0}}" Foreground="#FF4757" FontSize="12" HorizontalAlignment="Right"/>
                                                     </Grid>
                                                     <Border Height="5" CornerRadius="3">
                                                         <Border.Background>
@@ -379,20 +380,20 @@
                                             <Border Background="#161B22" CornerRadius="8" Padding="14" BorderBrush="#21262D" BorderThickness="1"
                                                     IsVisible="{Binding Indicators, Converter={x:Static ObjectConverters.IsNotNull}}">
                                                 <StackPanel Spacing="6">
-                                                    <TextBlock Text="Technische Indikatoren" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
-                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="Relative Strength Index (14 Perioden)&#10;&lt; 30 = Ueberverkauft (Kaufsignal)&#10;&gt; 70 = Ueberkauft (Verkaufssignal)">
-                                                        <TextBlock Text="RSI (14)" Foreground="#C9D1D9" FontSize="12"/>
+                                                    <TextBlock Text="{Binding [detail.indicators], Source={x:Static services:Loc.Instance}}" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
+                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="{Binding [rsi.tip], Source={x:Static services:Loc.Instance}}">
+                                                        <TextBlock Text="{Binding [rsi.label], Source={x:Static services:Loc.Instance}}" Foreground="#C9D1D9" FontSize="12"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding Indicators.Rsi14, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="#F0F6FC" FontSize="12"/>
                                                     </Grid>
                                                     <TextBlock Text="{Binding Indicators.RsiSignal}" FontSize="10" Foreground="#00D4AA"/>
                                                     <Border Height="1" Background="#21262D"/>
-                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="Moving Average Convergence Divergence&#10;Positiv = Aufwaertstrend, Negativ = Abwaertstrend">
-                                                        <TextBlock Text="MACD" Foreground="#C9D1D9" FontSize="12"/>
+                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="{Binding [macd.tip], Source={x:Static services:Loc.Instance}}">
+                                                        <TextBlock Text="{Binding [macd.label], Source={x:Static services:Loc.Instance}}" Foreground="#C9D1D9" FontSize="12"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding Indicators.MacdSignalText}" FontSize="10" FontWeight="Bold" Foreground="#3B82F6"/>
                                                     </Grid>
                                                     <Border Height="1" Background="#21262D"/>
-                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="Simple Moving Average&#10;SMA20 = kurzfristiger Durchschnitt&#10;SMA50 = mittelfristiger Durchschnitt&#10;SMA20 &gt; SMA50 = Golden Cross (bullisch)">
-                                                        <TextBlock Text="SMA 20/50" Foreground="#C9D1D9" FontSize="12"/>
+                                                    <Grid ColumnDefinitions="*,Auto" ToolTip.Tip="{Binding [sma.tip], Source={x:Static services:Loc.Instance}}">
+                                                        <TextBlock Text="{Binding [sma.label], Source={x:Static services:Loc.Instance}}" Foreground="#C9D1D9" FontSize="12"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding Indicators.SmaSignal}" FontSize="10" FontWeight="Bold" Foreground="#F59E0B"/>
                                                     </Grid>
                                                     <Border Height="1" Background="#21262D"/>
@@ -448,11 +449,11 @@
                             <Border Height="1" Background="#21262D"/>
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <StackPanel Spacing="2">
-                                    <TextBlock Text="Startkapital" FontSize="11" Foreground="#8B949E" ToolTip.Tip="Anfangskapital fuer das Uebungsdepot eingeben"/>
+                                    <TextBlock Text="{Binding [depot.startcapital], Source={x:Static services:Loc.Instance}}" FontSize="11" Foreground="#8B949E" ToolTip.Tip="{Binding [depot.startcapital.tip], Source={x:Static services:Loc.Instance}}"/>
                                     <TextBox Text="{Binding StartingBalanceInput}" Width="140" Height="32"
                                              IsEnabled="{Binding CanEditStartingBalance}"
                                              Watermark="z.B. 10000"
-                                             ToolTip.Tip="Startkapital fuer dein Paper-Trading-Depot"/>
+                                             ToolTip.Tip="{Binding [depot.startcapital.tip], Source={x:Static services:Loc.Instance}}"/>
                                 </StackPanel>
                                 <StackPanel Spacing="2">
                                     <TextBlock Text="Gebuehr %" FontSize="11" Foreground="#8B949E" ToolTip.Tip="Eigene Handelsgebuehr fuer das Fake-Depot, z.B. 0,26 fuer 0,26%"/>
@@ -460,10 +461,10 @@
                                              Watermark="0,26"
                                              ToolTip.Tip="Prozentuale Gebuehr pro Kauf und Verkauf im Fake-Depot"/>
                                 </StackPanel>
-                                <Button Content="Depot Zuruecksetzen" Padding="12,6" FontSize="11"
+                                <Button Content="{Binding [depot.reset], Source={x:Static services:Loc.Instance}}" Padding="12,6" FontSize="11"
                                         Command="{Binding ResetPortfolioCommand}" VerticalAlignment="Bottom" Margin="0,0,0,1"
-                                        ToolTip.Tip="Alle Positionen und Transaktionen loeschen und mit neuem Startkapital beginnen"/>
-                                <TextBlock Text="Setzt alle Positionen und Transaktionen zurueck."
+                                        ToolTip.Tip="{Binding [depot.reset.tip], Source={x:Static services:Loc.Instance}}"/>
+                                <TextBlock Text="{Binding [depot.reset.tip], Source={x:Static services:Loc.Instance}}"
                                            FontSize="10" Foreground="#484F58" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
                             </StackPanel>
                             <TextBlock Text="{Binding PortfolioFeeInfo}" FontSize="11" Foreground="#8B949E"
@@ -473,9 +474,9 @@
 
                     <!-- Portfolio Chart -->
                     <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                        <TextBlock Text="Depot-Entwicklung" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" x:Name="ResetPortfolioChartBtn" Content="Reset Ansicht" Padding="10,5" FontSize="10"
-                                ToolTip.Tip="Setzt Zoom und Verschiebung des Depot-Diagramms zurueck"/>
+                        <TextBlock Text="{Binding [portfolio.chart], Source={x:Static services:Loc.Instance}}" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" x:Name="ResetPortfolioChartBtn" Content="{Binding [portfolio.resetview], Source={x:Static services:Loc.Instance}}" Padding="10,5" FontSize="10"
+                                ToolTip.Tip="{Binding [portfolio.resetview], Source={x:Static services:Loc.Instance}}"/>
                     </Grid>
                     <Border Background="#161B22" CornerRadius="10" Padding="8" BorderBrush="#21262D" BorderThickness="1" Height="250">
                         <views:PortfolioChartControl x:Name="PortfolioChart"
@@ -488,28 +489,28 @@
 
                     <!-- Positions -->
                     <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" VerticalAlignment="Center">
-                        <TextBlock Text="Positionen" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="Sortieren:" Margin="16,0,6,0" FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding [depot.positions], Source={x:Static services:Loc.Instance}}" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{Binding [portfolio.sort], Source={x:Static services:Loc.Instance}}" Margin="16,0,6,0" FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
                         <ComboBox Grid.Column="2" ItemsSource="{Binding PortfolioSortOptions}" SelectedItem="{Binding SelectedPortfolioSort}" Width="120"
                                   ToolTip.Tip="Sortiert die Depot-Positionen, z. B. nach G/V oder investiertem Betrag"/>
-                        <Button Grid.Column="3" Content="A/Z" Padding="8,5" FontSize="10" Margin="8,0,0,0" HorizontalAlignment="Left"
+                        <Button Grid.Column="3" Content="{Binding [sort.direction], Source={x:Static services:Loc.Instance}}" Padding="8,5" FontSize="10" Margin="8,0,0,0" HorizontalAlignment="Left"
                                 Command="{Binding TogglePortfolioSortDirectionCommand}"
-                                ToolTip.Tip="Sortierrichtung umkehren"/>
-                        <Button Grid.Column="4" x:Name="ExportPortfolioPdfBtn" Content="Als PDF" Padding="10,5" FontSize="10"
-                                ToolTip.Tip="Oeffnet ein Speichern-unter-Fenster fuer die aktuelle Depotliste als PDF"/>
+                                ToolTip.Tip="{Binding [sort.direction.tip], Source={x:Static services:Loc.Instance}}"/>
+                        <Button Grid.Column="4" x:Name="ExportPortfolioPdfBtn" Content="{Binding [portfolio.exportpdf], Source={x:Static services:Loc.Instance}}" Padding="10,5" FontSize="10"
+                                ToolTip.Tip="{Binding [portfolio.exportpdf], Source={x:Static services:Loc.Instance}}"/>
                     </Grid>
                     <Border Background="#161B22" CornerRadius="10" Padding="4" BorderBrush="#21262D" BorderThickness="1">
                         <DataGrid ItemsSource="{Binding SortedPortfolioPositions}" AutoGenerateColumns="False"
                                   IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
                                   Background="#161B22" HeadersVisibility="Column" SelectionMode="Single" MaxHeight="300">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="COIN" Binding="{Binding Symbol}" Width="100"/>
-                                <DataGridTextColumn Header="MENGE" Binding="{Binding AmountFormatted}" Width="120"/>
-                                <DataGridTextColumn Header="KAUFPREIS" Binding="{Binding AvgPriceFormatted}" Width="120"/>
-                                <DataGridTextColumn Header="KURS" Binding="{Binding CurrentPriceFormatted}" Width="120"/>
-                                <DataGridTextColumn Header="INVESTIERT" Binding="{Binding TotalCost, StringFormat={}{0:N2}}" Width="120"/>
-                                <DataGridTextColumn Header="WERT" Binding="{Binding TotalValueFormatted}" Width="120"/>
-                                <DataGridTemplateColumn Header="G/V" Width="120">
+                                <DataGridTextColumn Header="{Binding [col.coin], Source={x:Static services:Loc.Instance}}" Binding="{Binding Symbol}" Width="100"/>
+                                <DataGridTextColumn Header="{Binding [amount], Source={x:Static services:Loc.Instance}}" Binding="{Binding AmountFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="{Binding [price], Source={x:Static services:Loc.Instance}}" Binding="{Binding AvgPriceFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="{Binding [col.current], Source={x:Static services:Loc.Instance}}" Binding="{Binding CurrentPriceFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="{Binding [col.invested], Source={x:Static services:Loc.Instance}}" Binding="{Binding TotalCost, StringFormat={}{0:N2}}" Width="120"/>
+                                <DataGridTextColumn Header="{Binding [col.value], Source={x:Static services:Loc.Instance}}" Binding="{Binding TotalValueFormatted}" Width="120"/>
+                                <DataGridTemplateColumn Header="{Binding [col.pnlshort], Source={x:Static services:Loc.Instance}}" Width="120">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding ProfitLossPercentFormatted}"
@@ -524,8 +525,8 @@
                                             <Button Classes="sell" Padding="6,3" FontSize="10"
                                                     Command="{Binding $parent[Window].DataContext.OpenSellDialogCommand}"
                                                     CommandParameter="{Binding}"
-                                                    ToolTip.Tip="Verkaufsfenster fuer diese Position oeffnen">
-                                                <TextBlock Text="Verkaufen" Foreground="White" FontSize="10"/>
+                                                    ToolTip.Tip="{Binding [sell.tip], Source={x:Static services:Loc.Instance}}">
+                                                <TextBlock Text="{Binding [sell], Source={x:Static services:Loc.Instance}}" Foreground="White" FontSize="10"/>
                                             </Button>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -535,15 +536,15 @@
                     </Border>
 
                     <!-- Transaction History -->
-                    <TextBlock Text="Transaktionshistorie" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <TextBlock Text="{Binding [depot.history], Source={x:Static services:Loc.Instance}}" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
                     <Border Background="#161B22" CornerRadius="10" Padding="4" BorderBrush="#21262D" BorderThickness="1">
                         <DataGrid ItemsSource="{Binding Portfolio.TransactionHistory}" AutoGenerateColumns="False"
                                   IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
                                   Background="#161B22" HeadersVisibility="Column" MaxHeight="300">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="DATUM" Binding="{Binding TimestampFormatted}" Width="140"/>
-                                <DataGridTextColumn Header="COIN" Binding="{Binding Symbol}" Width="80"/>
-                                <DataGridTemplateColumn Header="TYP" Width="80">
+                                <DataGridTextColumn Header="{Binding [date], Source={x:Static services:Loc.Instance}}" Binding="{Binding TimestampFormatted}" Width="140"/>
+                                <DataGridTextColumn Header="{Binding [col.coin], Source={x:Static services:Loc.Instance}}" Binding="{Binding Symbol}" Width="80"/>
+                                <DataGridTemplateColumn Header="{Binding [type], Source={x:Static services:Loc.Instance}}" Width="80">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding TypeText}"
@@ -552,11 +553,11 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="MENGE" Binding="{Binding AmountFormatted}" Width="120"/>
-                                <DataGridTextColumn Header="PREIS" Binding="{Binding PriceFormatted}" Width="120"/>
-                                <DataGridTextColumn Header="GEBUEHR" Binding="{Binding FeeFormatted}" Width="110"/>
-                                <DataGridTextColumn Header="GESAMT" Binding="{Binding TotalFormatted}" Width="120"/>
-                                <DataGridTextColumn Header="QUELLE" Binding="{Binding Source}" Width="100"/>
+                                <DataGridTextColumn Header="{Binding [amount], Source={x:Static services:Loc.Instance}}" Binding="{Binding AmountFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="{Binding [price], Source={x:Static services:Loc.Instance}}" Binding="{Binding PriceFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="{Binding [col.fee], Source={x:Static services:Loc.Instance}}" Binding="{Binding FeeFormatted}" Width="110"/>
+                                <DataGridTextColumn Header="{Binding [total], Source={x:Static services:Loc.Instance}}" Binding="{Binding TotalFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="{Binding [col.source], Source={x:Static services:Loc.Instance}}" Binding="{Binding SourceText}" Width="100"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
@@ -570,22 +571,22 @@
                     <!-- AI Settings -->
                     <Border Background="#161B22" CornerRadius="10" Padding="20" BorderBrush="#21262D" BorderThickness="1">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="KI-Trading Einstellungen" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            <TextBlock Text="{Binding [ai.settings], Source={x:Static services:Loc.Instance}}" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Anbieter" FontSize="11" Foreground="#8B949E" ToolTip.Tip="KI-Anbieter fuer automatische Handelsempfehlungen"/>
+                                    <TextBlock Text="{Binding [ai.provider], Source={x:Static services:Loc.Instance}}" FontSize="11" Foreground="#8B949E" ToolTip.Tip="{Binding [ai.provider.tip], Source={x:Static services:Loc.Instance}}"/>
                                     <ComboBox ItemsSource="{Binding AiProviderOptions}" SelectedItem="{Binding AiProvider}" Width="120"
-                                              ToolTip.Tip="Welcher KI-Anbieter fuer Empfehlungen genutzt werden soll"/>
+                                              ToolTip.Tip="{Binding [ai.provider.tip], Source={x:Static services:Loc.Instance}}"/>
                                 </StackPanel>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="API-Schluessel" FontSize="11" Foreground="#8B949E" ToolTip.Tip="API-Schluessel fuer den gewaehlten KI-Anbieter (wird verschluesselt gespeichert)"/>
+                                    <TextBlock Text="{Binding [ai.apikey], Source={x:Static services:Loc.Instance}}" FontSize="11" Foreground="#8B949E" ToolTip.Tip="{Binding [ai.apikey.tip], Source={x:Static services:Loc.Instance}}"/>
                                     <TextBox Text="{Binding AiApiKey}" Width="300" PasswordChar="*"
-                                             ToolTip.Tip="API-Schluessel fuer den gewaehlten KI-Anbieter"/>
+                                             ToolTip.Tip="{Binding [ai.apikey.tip], Source={x:Static services:Loc.Instance}}"/>
                                 </StackPanel>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="API-URL" FontSize="11" Foreground="#8B949E" ToolTip.Tip="API-Endpunkt URL (Standard wird automatisch gesetzt)"/>
+                                    <TextBlock Text="{Binding [ai.apiurl], Source={x:Static services:Loc.Instance}}" FontSize="11" Foreground="#8B949E" ToolTip.Tip="{Binding [ai.apiurl.tip], Source={x:Static services:Loc.Instance}}"/>
                                     <TextBox Text="{Binding AiApiUrl}" Width="350"
-                                             ToolTip.Tip="API-Endpunkt des KI-Anbieters"/>
+                                             ToolTip.Tip="{Binding [ai.apiurl.tip], Source={x:Static services:Loc.Instance}}"/>
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
@@ -789,20 +790,20 @@
                         MinHeight="150">
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,*">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="Strategie-Ergebnisse" FontSize="12" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                            <TextBlock Text="{Binding [strat.results], Source={x:Static services:Loc.Instance}}" FontSize="12" FontWeight="SemiBold" Foreground="#F0F6FC"/>
                             <TextBlock Text="{Binding StrategyStatusText}" FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
-                            <Button Content="Alle ausfuehren" Padding="6,3" FontSize="9" Command="{Binding ExecuteAllStrategyOrdersCommand}"
-                                    ToolTip.Tip="Fuehrt alle vorgeschlagenen Strategie-Trades als Paper-Trades aus"/>
+                            <Button Content="{Binding [strat.execall], Source={x:Static services:Loc.Instance}}" Padding="6,3" FontSize="9" Command="{Binding ExecuteAllStrategyOrdersCommand}"
+                                    ToolTip.Tip="{Binding [strat.execall], Source={x:Static services:Loc.Instance}}"/>
                         </StackPanel>
-                        <TextBlock Grid.Column="1" Text="Protokoll" FontSize="12" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                        <TextBlock Grid.Column="1" Text="{Binding [strat.log], Source={x:Static services:Loc.Instance}}" FontSize="12" FontWeight="SemiBold" Foreground="#F0F6FC"/>
 
                         <DataGrid Grid.Row="1" Grid.Column="0" ItemsSource="{Binding StrategyResults}"
                                   AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="None"
                                   BorderThickness="0" Background="#161B22" HeadersVisibility="Column"
                                   Margin="0,4,4,0">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="COIN" Binding="{Binding Symbol}" Width="80"/>
-                                <DataGridTemplateColumn Header="AKTION" Width="80">
+                                <DataGridTextColumn Header="{Binding [col.coin], Source={x:Static services:Loc.Instance}}" Binding="{Binding Symbol}" Width="80"/>
+                                <DataGridTemplateColumn Header="{Binding [action], Source={x:Static services:Loc.Instance}}" Width="80">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding ActionText}"
@@ -811,15 +812,15 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="MENGE" Binding="{Binding Amount, StringFormat={}{0:N6}}" Width="100"/>
-                                <DataGridTextColumn Header="GRUND" Binding="{Binding Reason}" Width="*"/>
+                                <DataGridTextColumn Header="{Binding [amount], Source={x:Static services:Loc.Instance}}" Binding="{Binding Amount, StringFormat={}{0:N6}}" Width="100"/>
+                                <DataGridTextColumn Header="{Binding [reason], Source={x:Static services:Loc.Instance}}" Binding="{Binding Reason}" Width="*"/>
                                 <DataGridTemplateColumn Header="" Width="70">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Classes="accent" Padding="4,2" FontSize="9"
                                                     Command="{Binding $parent[Window].DataContext.ExecuteStrategyOrderCommand}"
                                                     CommandParameter="{Binding}">
-                                                <TextBlock Text="Ausfuehren" Foreground="#0D1117" FontSize="9"/>
+                                                <TextBlock Text="{Binding [execute], Source={x:Static services:Loc.Instance}}" Foreground="#0D1117" FontSize="9"/>
                                             </Button>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -846,11 +847,11 @@
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <ComboBox ItemsSource="{Binding SavedStrategyNames}" Width="130" Height="28" FontSize="10"
                                   x:Name="StrategyLoadCombo"
-                                  ToolTip.Tip="Gespeicherte Strategie zum Laden auswaehlen"/>
-                        <Button Content="Laden" Padding="6,3" FontSize="10"
+                                  ToolTip.Tip="{Binding [strategy.load.saved.tip], Source={x:Static services:Loc.Instance}}"/>
+                        <Button Content="{Binding [strat.load], Source={x:Static services:Loc.Instance}}" Padding="6,3" FontSize="10"
                                 Command="{Binding LoadStrategyCommand}"
                                 CommandParameter="{Binding #StrategyLoadCombo.SelectedItem}"
-                                ToolTip.Tip="Laedt die ausgewaehlte Strategie in den Editor"/>
+                                ToolTip.Tip="{Binding [strat.load.tip], Source={x:Static services:Loc.Instance}}"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -864,8 +865,8 @@
                 <Grid RowDefinitions="Auto,* ,Auto">
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Spacing="4">
-                            <TextBlock Text="Hilfe" FontSize="22" FontWeight="Bold" Foreground="#F0F6FC"/>
-                            <TextBlock Text="So benutzt du CryptoScanner am einfachsten." FontSize="12" Foreground="#8B949E"/>
+                            <TextBlock Text="{Binding [help], Source={x:Static services:Loc.Instance}}" FontSize="22" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            <TextBlock Text="{Binding [help.subtitle], Source={x:Static services:Loc.Instance}}" FontSize="12" Foreground="#8B949E"/>
                         </StackPanel>
                         <Button Grid.Column="1" Content="X" Padding="8,4" Command="{Binding CloseHelpCommand}"/>
                     </Grid>
@@ -964,7 +965,7 @@
                     </ScrollViewer>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Schliessen" Padding="14,7" Command="{Binding CloseHelpCommand}"/>
+                        <Button Content="{Binding [close], Source={x:Static services:Loc.Instance}}" Padding="14,7" Command="{Binding CloseHelpCommand}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -976,7 +977,7 @@
             <Border Background="#161B22" CornerRadius="12" Padding="24" BorderBrush="#30363D" BorderThickness="1"
                     HorizontalAlignment="Center" VerticalAlignment="Center" Width="400">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="Coin Kaufen" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <TextBlock Text="{Binding [buy.dialog.title], Source={x:Static services:Loc.Instance}}" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <TextBlock Text="{Binding TradeCoin.DisplayName}" FontSize="14" Foreground="#8B949E" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding TradeCoin.PriceFormatted}" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
@@ -984,33 +985,33 @@
                     <TextBlock Text="{Binding TradeMaxInfo}" Foreground="#00D4AA" FontWeight="SemiBold" FontSize="13"/>
 
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <RadioButton Content="Anzahl Coins" GroupName="BuyMode"
+                        <RadioButton Content="{Binding [buy.mode.amount], Source={x:Static services:Loc.Instance}}" GroupName="BuyMode"
                                      IsChecked="{Binding !TradeByValue}" Foreground="#C9D1D9" FontSize="12"/>
-                        <RadioButton Content="Betrag in Waehrung" GroupName="BuyMode"
+                        <RadioButton Content="{Binding [buy.mode.value], Source={x:Static services:Loc.Instance}}" GroupName="BuyMode"
                                      IsChecked="{Binding TradeByValue}" Foreground="#C9D1D9" FontSize="12"/>
                     </StackPanel>
 
                     <Grid ColumnDefinitions="*,Auto">
-                        <TextBox Watermark="Menge (z.B. 0.01)" Text="{Binding TradeAmount}"
-                                 ToolTip.Tip="Wie viele Coins du kaufen moechtest"
+                        <TextBox Watermark="{Binding [buy.amount.watermark], Source={x:Static services:Loc.Instance}}" Text="{Binding TradeAmount}"
+                                 ToolTip.Tip="{Binding [amount], Source={x:Static services:Loc.Instance}}"
                                  IsVisible="{Binding !TradeByValue}"/>
-                        <TextBox Watermark="Betrag (z.B. 500)" Text="{Binding TradeValueInput}"
-                                 ToolTip.Tip="Welchen Geldbetrag du investieren moechtest"
+                        <TextBox Watermark="{Binding [buy.value.watermark], Source={x:Static services:Loc.Instance}}" Text="{Binding TradeValueInput}"
+                                 ToolTip.Tip="{Binding [value], Source={x:Static services:Loc.Instance}}"
                                  IsVisible="{Binding TradeByValue}"/>
-                        <Button Grid.Column="1" Content="Alles" Padding="8,5" Margin="6,0,0,0" FontSize="11"
+                        <Button Grid.Column="1" Content="{Binding [all], Source={x:Static services:Loc.Instance}}" Padding="8,5" Margin="6,0,0,0" FontSize="11"
                                 Command="{Binding FillMaxTradeCommand}"
-                                ToolTip.Tip="Maximalen verfuegbaren Betrag einsetzen"/>
+                                ToolTip.Tip="{Binding [all], Source={x:Static services:Loc.Instance}}"/>
                     </Grid>
 
                     <TextBlock Text="{Binding TradePreview}" Foreground="#8B949E" FontSize="12" FontStyle="Italic"/>
                     <TextBlock Text="{Binding TradeMessage}" Foreground="#FF4757" FontSize="12"
                                IsVisible="{Binding TradeMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                     <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-                        <Button Content="Abbrechen" Command="{Binding CancelTradeCommand}" Padding="14,7"
-                                ToolTip.Tip="Kaufdialog ohne Aenderung schliessen"/>
+                        <Button Content="{Binding [cancel], Source={x:Static services:Loc.Instance}}" Command="{Binding CancelTradeCommand}" Padding="14,7"
+                                ToolTip.Tip="{Binding [cancel], Source={x:Static services:Loc.Instance}}"/>
                         <Button Classes="accent" Command="{Binding ExecuteBuyCommand}" Padding="14,7"
-                                ToolTip.Tip="Fuehrt den Kauf als Paper-Trade aus">
-                            <TextBlock Text="Kaufen" Foreground="#0D1117" FontWeight="SemiBold"/>
+                                ToolTip.Tip="{Binding [buy.tip], Source={x:Static services:Loc.Instance}}">
+                            <TextBlock Text="{Binding [buy], Source={x:Static services:Loc.Instance}}" Foreground="#0D1117" FontWeight="SemiBold"/>
                         </Button>
                     </StackPanel>
                 </StackPanel>
@@ -1023,7 +1024,7 @@
             <Border Background="#161B22" CornerRadius="12" Padding="24" BorderBrush="#30363D" BorderThickness="1"
                     HorizontalAlignment="Center" VerticalAlignment="Center" Width="400">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="Coin Verkaufen" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <TextBlock Text="{Binding [sell.dialog.title], Source={x:Static services:Loc.Instance}}" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <TextBlock Text="{Binding SellPosition.Symbol}" FontSize="14" Foreground="#8B949E" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding SellPosition.CurrentPriceFormatted}" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
@@ -1031,22 +1032,22 @@
                     <TextBlock Text="{Binding TradeMaxInfo}" Foreground="#FF4757" FontWeight="SemiBold" FontSize="13"/>
 
                     <Grid ColumnDefinitions="*,Auto">
-                        <TextBox Watermark="Menge zum Verkaufen" Text="{Binding TradeAmount}"
-                                 ToolTip.Tip="Wie viele Coins du verkaufen moechtest"/>
-                        <Button Grid.Column="1" Content="Alles" Padding="8,5" Margin="6,0,0,0" FontSize="11"
+                        <TextBox Watermark="{Binding [sell.amount.watermark], Source={x:Static services:Loc.Instance}}" Text="{Binding TradeAmount}"
+                                 ToolTip.Tip="{Binding [amount], Source={x:Static services:Loc.Instance}}"/>
+                        <Button Grid.Column="1" Content="{Binding [all], Source={x:Static services:Loc.Instance}}" Padding="8,5" Margin="6,0,0,0" FontSize="11"
                                 Command="{Binding FillMaxTradeCommand}"
-                                ToolTip.Tip="Gesamte Position verkaufen"/>
+                                ToolTip.Tip="{Binding [all], Source={x:Static services:Loc.Instance}}"/>
                     </Grid>
 
                     <TextBlock Text="{Binding TradePreview}" Foreground="#8B949E" FontSize="12" FontStyle="Italic"/>
                     <TextBlock Text="{Binding TradeMessage}" Foreground="#FF4757" FontSize="12"
                                IsVisible="{Binding TradeMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                     <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-                        <Button Content="Abbrechen" Command="{Binding CancelTradeCommand}" Padding="14,7"
-                                ToolTip.Tip="Verkaufsdialog ohne Aenderung schliessen"/>
+                        <Button Content="{Binding [cancel], Source={x:Static services:Loc.Instance}}" Command="{Binding CancelTradeCommand}" Padding="14,7"
+                                ToolTip.Tip="{Binding [cancel], Source={x:Static services:Loc.Instance}}"/>
                         <Button Classes="sell" Command="{Binding ExecuteSellCommand}" Padding="14,7"
-                                ToolTip.Tip="Fuehrt den Verkauf als Paper-Trade aus">
-                            <TextBlock Text="Verkaufen" Foreground="White" FontWeight="SemiBold"/>
+                                ToolTip.Tip="{Binding [sell.tip], Source={x:Static services:Loc.Instance}}">
+                            <TextBlock Text="{Binding [sell], Source={x:Static services:Loc.Instance}}" Foreground="White" FontWeight="SemiBold"/>
                         </Button>
                     </StackPanel>
                 </StackPanel>
@@ -1060,37 +1061,37 @@
                     HorizontalAlignment="Center" VerticalAlignment="Center" Width="430">
                 <StackPanel Spacing="10">
                     <TextBlock Text="{Binding StrategyBlockEditorTitle}" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
-                    <TextBlock Text="Hier kannst du die wichtigste Logik des Blocks direkt aendern."
+                    <TextBlock Text="{Binding [editblock.hint], Source={x:Static services:Loc.Instance}}"
                                Foreground="#8B949E" FontSize="12" TextWrapping="Wrap"/>
 
                     <StackPanel Spacing="8" IsVisible="{Binding IsEditingActionBlock}">
-                        <TextBlock Text="Prozent / Anteil" FontSize="12" Foreground="#8B949E"/>
+                        <TextBlock Text="{Binding [percentshare], Source={x:Static services:Loc.Instance}}" FontSize="12" Foreground="#8B949E"/>
                         <TextBox Text="{Binding StrategyBlockEditorActionAmount}"
                                  Watermark="z.B. 10% oder Alles"
-                                 ToolTip.Tip="Beispiele: 5%, 10%, 25%, 50%, 100% oder Alles"/>
-                        <TextBlock Text="Beispiele: 5%, 10%, 25%, 50%, 100% oder Alles"
+                                 ToolTip.Tip="{Binding [editblock.amount.hint], Source={x:Static services:Loc.Instance}}"/>
+                        <TextBlock Text="{Binding [editblock.amount.hint], Source={x:Static services:Loc.Instance}}"
                                    FontSize="10" Foreground="#6E7681"/>
                     </StackPanel>
 
                     <StackPanel Spacing="8" IsVisible="{Binding IsEditingConditionBlock}">
-                        <TextBlock Text="Operator" FontSize="12" Foreground="#8B949E"/>
+                        <TextBlock Text="{Binding [operator], Source={x:Static services:Loc.Instance}}" FontSize="12" Foreground="#8B949E"/>
                         <TextBox Text="{Binding StrategyBlockEditorOperator}" Watermark="&gt;, &lt;, &gt;=, &lt;=, =="
-                                 ToolTip.Tip="Vergleichsoperator fuer die Bedingung"/>
-                        <TextBlock Text="Wert" FontSize="12" Foreground="#8B949E"/>
-                        <TextBox Text="{Binding StrategyBlockEditorValue}" Watermark="z.B. 30"/>
-                        <TextBlock Text="Preset (optional)" FontSize="12" Foreground="#8B949E"/>
-                        <TextBox Text="{Binding StrategyBlockEditorConditionPreset}" Watermark="z.B. Signal positiv"/>
+                                 ToolTip.Tip="{Binding [editblock.operator.tip], Source={x:Static services:Loc.Instance}}"/>
+                        <TextBlock Text="{Binding [value], Source={x:Static services:Loc.Instance}}" FontSize="12" Foreground="#8B949E"/>
+                        <TextBox Text="{Binding StrategyBlockEditorValue}" Watermark="{Binding [editblock.value.watermark], Source={x:Static services:Loc.Instance}}"/>
+                        <TextBlock Text="{Binding [preset], Source={x:Static services:Loc.Instance}}" FontSize="12" Foreground="#8B949E"/>
+                        <TextBox Text="{Binding StrategyBlockEditorConditionPreset}" Watermark="{Binding [editblock.preset.watermark], Source={x:Static services:Loc.Instance}}"/>
                     </StackPanel>
 
                     <StackPanel Spacing="8" IsVisible="{Binding IsEditingAlarmBlock}">
-                        <TextBlock Text="Alarmtext" FontSize="12" Foreground="#8B949E"/>
-                        <TextBox Text="{Binding StrategyBlockEditorAlarmText}" Watermark="Signal erkannt"/>
+                        <TextBlock Text="{Binding [alarmtext], Source={x:Static services:Loc.Instance}}" FontSize="12" Foreground="#8B949E"/>
+                        <TextBox Text="{Binding StrategyBlockEditorAlarmText}" Watermark="{Binding [editblock.alarm.watermark], Source={x:Static services:Loc.Instance}}"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,8,0,0">
-                        <Button Content="Abbrechen" Command="{Binding CancelStrategyBlockEditorCommand}"/>
-                        <Button Classes="accent" Content="Speichern" Command="{Binding SaveStrategyBlockEditorCommand}">
-                            <TextBlock Text="Speichern" Foreground="#0D1117" FontWeight="SemiBold"/>
+                        <Button Content="{Binding [cancel], Source={x:Static services:Loc.Instance}}" Command="{Binding CancelStrategyBlockEditorCommand}"/>
+                        <Button Classes="accent" Content="{Binding [save], Source={x:Static services:Loc.Instance}}" Command="{Binding SaveStrategyBlockEditorCommand}">
+                            <TextBlock Text="{Binding [save], Source={x:Static services:Loc.Instance}}" Foreground="#0D1117" FontWeight="SemiBold"/>
                         </Button>
                     </StackPanel>
                 </StackPanel>
