@@ -7,10 +7,14 @@ namespace CryptoScanner.Services;
 
 public class PortfolioService
 {
+    public const decimal DefaultTradingFeeRate = 0.0026m;
     private readonly string _savePath;
     private Portfolio _portfolio;
+    private decimal _tradingFeeRate = DefaultTradingFeeRate;
 
     public Portfolio Portfolio => _portfolio;
+    public decimal TradingFeeRate => _tradingFeeRate;
+    public string TradingFeeRatePercent => $"{TradingFeeRate * 100m:N2}%";
 
     public PortfolioService(string? savePath = null)
     {
@@ -25,6 +29,12 @@ public class PortfolioService
         _portfolio = Load() ?? new Portfolio();
     }
 
+    public void SetTradingFeeRate(decimal rate)
+    {
+        _tradingFeeRate = Math.Clamp(rate, 0m, 0.10m);
+        Save();
+    }
+
     public void ResetPortfolio(decimal initialBalance, string currency)
     {
         _portfolio = new Portfolio
@@ -34,18 +44,23 @@ public class PortfolioService
             Currency = currency,
             CreatedAt = DateTime.Now
         };
-        Save();
+        _portfolio.RefreshComputedProperties();
+        RecordSnapshot();
     }
 
     public (bool Success, string Message) Buy(string symbol, string displayName, decimal amount, decimal pricePerUnit)
     {
-        var totalCost = amount * pricePerUnit;
-        if (totalCost > _portfolio.Balance)
-            return (false, $"Nicht genug Guthaben. Verfuegbar: {_portfolio.Balance:N2}, Kosten: {totalCost:N2}");
         if (amount <= 0)
             return (false, "Menge muss groesser als 0 sein.");
 
+        var grossCost = amount * pricePerUnit;
+        var fee = grossCost * TradingFeeRate;
+        var totalCost = grossCost + fee;
+        if (totalCost > _portfolio.Balance)
+            return (false, $"Nicht genug Guthaben. Verfuegbar: {_portfolio.Balance:N2}, Kosten inkl. Gebuehr: {totalCost:N2}");
+
         _portfolio.Balance -= totalCost;
+        var effectiveUnitCost = totalCost / amount;
 
         // Update or create position
         var position = _portfolio.Positions.FirstOrDefault(p => p.Symbol == symbol);
@@ -53,7 +68,7 @@ public class PortfolioService
         {
             // Weighted average price
             var totalAmount = position.Amount + amount;
-            position.AverageBuyPrice = (position.Amount * position.AverageBuyPrice + amount * pricePerUnit) / totalAmount;
+            position.AverageBuyPrice = (position.Amount * position.AverageBuyPrice + amount * effectiveUnitCost) / totalAmount;
             position.Amount = totalAmount;
             position.CurrentPrice = pricePerUnit;
         }
@@ -64,7 +79,7 @@ public class PortfolioService
                 Symbol = symbol,
                 DisplayName = displayName,
                 Amount = amount,
-                AverageBuyPrice = pricePerUnit,
+                AverageBuyPrice = effectiveUnitCost,
                 CurrentPrice = pricePerUnit
             });
         }
@@ -76,13 +91,14 @@ public class PortfolioService
             Type = TransactionType.Kauf,
             Amount = amount,
             PricePerUnit = pricePerUnit,
+            Fee = fee,
             TotalCost = totalCost,
             Source = "Manuell"
         });
 
         _portfolio.RefreshComputedProperties();
-        Save();
-        return (true, $"{amount:N6} {symbol} gekauft fuer {totalCost:N2}");
+        RecordSnapshot();
+        return (true, $"{amount:N6} {symbol} gekauft fuer {totalCost:N2} inkl. {fee:N2} Gebuehr");
     }
 
     public (bool Success, string Message) Sell(string symbol, decimal amount, decimal pricePerUnit)
@@ -95,7 +111,9 @@ public class PortfolioService
         if (amount <= 0)
             return (false, "Menge muss groesser als 0 sein.");
 
-        var totalRevenue = amount * pricePerUnit;
+        var grossRevenue = amount * pricePerUnit;
+        var fee = grossRevenue * TradingFeeRate;
+        var totalRevenue = grossRevenue - fee;
         _portfolio.Balance += totalRevenue;
         position.Amount -= amount;
         position.CurrentPrice = pricePerUnit;
@@ -110,13 +128,14 @@ public class PortfolioService
             Type = TransactionType.Verkauf,
             Amount = amount,
             PricePerUnit = pricePerUnit,
+            Fee = fee,
             TotalCost = totalRevenue,
             Source = "Manuell"
         });
 
         _portfolio.RefreshComputedProperties();
-        Save();
-        return (true, $"{amount:N6} {symbol} verkauft fuer {totalRevenue:N2}");
+        RecordSnapshot();
+        return (true, $"{amount:N6} {symbol} verkauft fuer {totalRevenue:N2} nach {fee:N2} Gebuehr");
     }
 
     public (bool Success, string Message) ExecuteAiTrade(TradeOrder order)
@@ -184,6 +203,7 @@ public class PortfolioService
             {
                 Balance = _portfolio.Balance,
                 InitialBalance = _portfolio.InitialBalance,
+                TradingFeeRate = _tradingFeeRate,
                 Currency = _portfolio.Currency,
                 CreatedAt = _portfolio.CreatedAt,
                 Positions = _portfolio.Positions.Select(p => new PositionData
@@ -194,7 +214,7 @@ public class PortfolioService
                 Transactions = _portfolio.TransactionHistory.Select(t => new TransactionData
                 {
                     Timestamp = t.Timestamp, Symbol = t.Symbol, Type = t.Type.ToString(),
-                    Amount = t.Amount, PricePerUnit = t.PricePerUnit, TotalCost = t.TotalCost,
+                    Amount = t.Amount, PricePerUnit = t.PricePerUnit, Fee = t.Fee, TotalCost = t.TotalCost,
                     Source = t.Source
                 }).ToList(),
                 Snapshots = _portfolio.ValueHistory.Select(s => new SnapshotData
@@ -228,6 +248,7 @@ public class PortfolioService
                 Currency = data.Currency,
                 CreatedAt = data.CreatedAt
             };
+            _tradingFeeRate = data.TradingFeeRate <= 0 ? DefaultTradingFeeRate : data.TradingFeeRate;
 
             foreach (var p in data.Positions)
                 portfolio.Positions.Add(new PortfolioPosition
@@ -241,7 +262,7 @@ public class PortfolioService
                 {
                     Timestamp = t.Timestamp, Symbol = t.Symbol,
                     Type = t.Type == "Verkauf" ? TransactionType.Verkauf : TransactionType.Kauf,
-                    Amount = t.Amount, PricePerUnit = t.PricePerUnit,
+                    Amount = t.Amount, PricePerUnit = t.PricePerUnit, Fee = t.Fee,
                     TotalCost = t.TotalCost, Source = t.Source
                 });
 
@@ -266,6 +287,7 @@ public class PortfolioService
     {
         public decimal Balance { get; set; }
         public decimal InitialBalance { get; set; }
+        public decimal TradingFeeRate { get; set; } = DefaultTradingFeeRate;
         public string Currency { get; set; } = "USD";
         public DateTime CreatedAt { get; set; }
         public List<PositionData> Positions { get; set; } = new();
@@ -288,6 +310,7 @@ public class PortfolioService
         public string Type { get; set; } = "";
         public decimal Amount { get; set; }
         public decimal PricePerUnit { get; set; }
+        public decimal Fee { get; set; }
         public decimal TotalCost { get; set; }
         public string Source { get; set; } = "";
     }

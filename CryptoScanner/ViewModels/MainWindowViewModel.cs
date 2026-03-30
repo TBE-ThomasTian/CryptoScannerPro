@@ -70,18 +70,28 @@ public partial class MainWindowViewModel : ObservableObject
 
     // ── Depot starting balance input ─────────────────────────────
     [ObservableProperty] private string _startingBalanceInput = "10000";
+    [ObservableProperty] private string _portfolioFeeRateInput = "0,26";
+    [ObservableProperty] private string _selectedPortfolioSort = "G/V %";
+    [ObservableProperty] private bool _portfolioSortAscending;
 
     public bool CanEditStartingBalance => Portfolio.Positions.Count == 0 && Portfolio.TransactionHistory.Count == 0;
 
     // ── Buy/Sell dialog state ──────────────────────────────────
     [ObservableProperty] private bool _showBuyDialog;
     [ObservableProperty] private bool _showSellDialog;
+    [ObservableProperty] private bool _showStrategyBlockEditor;
     [ObservableProperty] private CryptoCoin? _tradeCoin;
     [ObservableProperty] private string _tradeAmount = "";
     [ObservableProperty] private string _tradeMessage = string.Empty;
     [ObservableProperty] private PortfolioPosition? _sellPosition;
     [ObservableProperty] private bool _tradeByValue;  // false=coin amount, true=currency value
     [ObservableProperty] private string _tradeValueInput = "";
+    [ObservableProperty] private StrategyBlock? _editingStrategyBlock;
+    [ObservableProperty] private string _strategyBlockEditorOperator = "";
+    [ObservableProperty] private string _strategyBlockEditorValue = "";
+    [ObservableProperty] private string _strategyBlockEditorActionAmount = "";
+    [ObservableProperty] private string _strategyBlockEditorConditionPreset = "";
+    [ObservableProperty] private string _strategyBlockEditorAlarmText = "";
 
     public string TradePreview
     {
@@ -89,19 +99,30 @@ public partial class MainWindowViewModel : ObservableObject
         {
             if (TradeCoin == null || TradeCoin.CurrentPrice <= 0) return "";
             var sym = TradeCoin.CurrencySymbol;
+            var feeRate = _portfolioService.TradingFeeRate;
             if (TradeByValue)
             {
                 if (decimal.TryParse(TradeValueInput?.Replace(",", "."),
                     System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out var val) && val > 0)
-                    return $"= {val / TradeCoin.CurrentPrice:N6} {TradeCoin.DisplayName}";
+                {
+                    var fee = val * feeRate;
+                    return $"= {val / TradeCoin.CurrentPrice:N6} {TradeCoin.DisplayName} | Gebuehr {sym}{fee:N2}";
+                }
             }
             else
             {
                 if (decimal.TryParse(TradeAmount?.Replace(",", "."),
                     System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out var amt) && amt > 0)
-                    return $"= {sym}{amt * TradeCoin.CurrentPrice:N2}";
+                {
+                    var gross = amt * TradeCoin.CurrentPrice;
+                    var fee = gross * feeRate;
+                    if (ShowBuyDialog)
+                        return $"= {sym}{gross:N2} + Gebuehr {sym}{fee:N2} = {sym}{gross + fee:N2}";
+                    if (ShowSellDialog)
+                        return $"= {sym}{gross:N2} - Gebuehr {sym}{fee:N2} = {sym}{gross - fee:N2}";
+                }
             }
             return "";
         }
@@ -112,16 +133,45 @@ public partial class MainWindowViewModel : ObservableObject
         get
         {
             if (ShowBuyDialog && TradeCoin != null)
-                return $"Max: {Portfolio.CurrencySymbol}{Portfolio.Balance:N2}";
+                return $"Max inkl. {PortfolioFeeRateText} Gebuehr: {Portfolio.CurrencySymbol}{Portfolio.Balance:N2}";
             if (ShowSellDialog && SellPosition != null)
                 return $"Max: {SellPosition.Amount:N6} {SellPosition.Symbol}";
             return "";
         }
     }
 
+    public string PortfolioFeeRateText => _portfolioService.TradingFeeRatePercent;
+    public string PortfolioFeeInfo => $"Paper-Gebuehr: {PortfolioFeeRateText} pro Kauf/Verkauf (Kraken-aehnlich)";
+    public bool IsEditingConditionBlock => EditingStrategyBlock?.Type == BlockType.Condition;
+    public bool IsEditingActionBlock => EditingStrategyBlock?.Type == BlockType.ActionBuy || EditingStrategyBlock?.Type == BlockType.ActionSell;
+    public bool IsEditingAlarmBlock => EditingStrategyBlock?.Type == BlockType.ActionAlarm;
+    public string StrategyBlockEditorTitle => EditingStrategyBlock == null
+        ? "Block bearbeiten"
+        : $"{EditingStrategyBlock.Title} bearbeiten";
+
     partial void OnTradeAmountChanged(string value) => OnPropertyChanged(nameof(TradePreview));
     partial void OnTradeValueInputChanged(string value) => OnPropertyChanged(nameof(TradePreview));
     partial void OnTradeByValueChanged(bool value) => OnPropertyChanged(nameof(TradePreview));
+    partial void OnEditingStrategyBlockChanged(StrategyBlock? value)
+    {
+        OnPropertyChanged(nameof(IsEditingConditionBlock));
+        OnPropertyChanged(nameof(IsEditingActionBlock));
+        OnPropertyChanged(nameof(IsEditingAlarmBlock));
+        OnPropertyChanged(nameof(StrategyBlockEditorTitle));
+    }
+    partial void OnPortfolioFeeRateInputChanged(string value)
+    {
+        if (!decimal.TryParse(value?.Replace(",", "."),
+            System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var percent))
+            return;
+
+        _portfolioService.SetTradingFeeRate(percent / 100m);
+        OnPropertyChanged(nameof(PortfolioFeeRateText));
+        OnPropertyChanged(nameof(PortfolioFeeInfo));
+        OnPropertyChanged(nameof(TradeMaxInfo));
+        OnPropertyChanged(nameof(TradePreview));
+    }
 
     // ── AI Trading state ───────────────────────────────────────
     [ObservableProperty] private string _aiApiKey = string.Empty;
@@ -145,9 +195,12 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private bool _strategyRequireAboveAverageVolume;
     [ObservableProperty] private bool _strategySkipExistingPositions = true;
     [ObservableProperty] private string _selectedStrategyFilterPreset = "Ausgewogen";
+    [ObservableProperty] private bool _isOptimizingStrategy;
     public ObservableCollection<TradeOrder> StrategyResults { get; } = new();
     public ObservableCollection<string> StrategyLog { get; } = new();
+    public ObservableCollection<StrategyOptimizationResult> StrategyOptimizationResults { get; } = new();
     public ObservableCollection<string> SavedStrategyNames { get; } = new();
+    public ObservableCollection<PortfolioPosition> SortedPortfolioPositions { get; } = new();
     public ObservableCollection<string> StrategyFilterPresets { get; } = new()
     { "Konservativ", "Ausgewogen", "Aggressiv" };
 
@@ -168,6 +221,8 @@ public partial class MainWindowViewModel : ObservableObject
     { "USD", "EUR" };
     public ObservableCollection<string> LanguageOptions { get; } = new()
     { "DE", "EN" };
+    public ObservableCollection<string> PortfolioSortOptions { get; } = new()
+    { "G/V %", "G/V", "Wert", "Investiert", "Coin", "Menge" };
 
     [ObservableProperty] private string _selectedLanguage = Loc.Language == "en" ? "EN" : "DE";
 
@@ -176,6 +231,8 @@ public partial class MainWindowViewModel : ObservableObject
         Loc.Language = value == "EN" ? "en" : "de";
     }
     partial void OnSelectedStrategyFilterPresetChanged(string value) => ApplyStrategyFilterPreset(value);
+    partial void OnSelectedPortfolioSortChanged(string value) => RefreshPortfolioPositions();
+    partial void OnPortfolioSortAscendingChanged(bool value) => RefreshPortfolioPositions();
     public ObservableCollection<string> AiProviderOptions { get; } = new()
     { "ChatGPT", "Claude" };
 
@@ -215,6 +272,8 @@ public partial class MainWindowViewModel : ObservableObject
         // Initialize with RSI Momentum preset as the default template
         _currentStrategy = StrategyPresets.RsiMomentum();
         ApplyStrategyFilterPreset(SelectedStrategyFilterPreset);
+        PortfolioFeeRateInput = (_portfolioService.TradingFeeRate * 100m).ToString("N2");
+        RefreshPortfolioPositions();
 
         // Load persisted API key (decrypted)
         var savedKey = _secureStorage.LoadApiKey();
@@ -476,6 +535,7 @@ public partial class MainWindowViewModel : ObservableObject
                 StatusText = $"Scan abgeschlossen: {coinCount} Coins gefunden" + (errCount > 0 ? $" ({errCount} Fehler)" : "");
                 OnPropertyChanged(nameof(Portfolio));
                 PortfolioSnapshots = Portfolio.ValueHistory.ToList();
+                RefreshPortfolioPositions();
 
                 // AI auto-trading after scan
                 if (AiAutoTrading && _allCoins.Count > 0)
@@ -543,9 +603,9 @@ public partial class MainWindowViewModel : ObservableObject
         if (ShowBuyDialog && TradeCoin != null && TradeCoin.CurrentPrice > 0)
         {
             if (TradeByValue)
-                TradeValueInput = Portfolio.Balance.ToString("N2");
+                TradeValueInput = (Portfolio.Balance / (1m + _portfolioService.TradingFeeRate)).ToString("N2");
             else
-                TradeAmount = (Portfolio.Balance / TradeCoin.CurrentPrice).ToString("N6");
+                TradeAmount = (Portfolio.Balance / (TradeCoin.CurrentPrice * (1m + _portfolioService.TradingFeeRate))).ToString("N6");
         }
         else if (ShowSellDialog && SellPosition != null)
         {
@@ -583,6 +643,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(Portfolio));
             PortfolioSnapshots = Portfolio.ValueHistory.ToList();
+            RefreshPortfolioPositions();
             OnPropertyChanged(nameof(CanEditStartingBalance));
             ShowBuyDialog = false;
             StatusText = message;
@@ -611,6 +672,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(Portfolio));
             PortfolioSnapshots = Portfolio.ValueHistory.ToList();
+            RefreshPortfolioPositions();
             ShowSellDialog = false;
             StatusText = message;
         }
@@ -636,6 +698,7 @@ public partial class MainWindowViewModel : ObservableObject
         _portfolioService.ResetPortfolio(balance, currency);
         OnPropertyChanged(nameof(Portfolio));
         PortfolioSnapshots = Portfolio.ValueHistory.ToList();
+        RefreshPortfolioPositions();
         OnPropertyChanged(nameof(CanEditStartingBalance));
         StatusText = $"Depot zurueckgesetzt auf {balance:N0} {currency}";
     }
@@ -690,6 +753,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(Portfolio));
             PortfolioSnapshots = Portfolio.ValueHistory.ToList();
+            RefreshPortfolioPositions();
             AiLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {order.ActionText} {order.Symbol}: {message}");
             AiRecommendations.Remove(order);
         }
@@ -745,11 +809,12 @@ public partial class MainWindowViewModel : ObservableObject
         var parts = param.Split('|');
         var typeStr = parts[0];
         var category = parts.Length > 1 ? parts[1] : "";
+        var (x, y) = FindNextStrategyBlockPosition();
 
         var block = new StrategyBlock
         {
-            X = 250 + CurrentStrategy.Blocks.Count * 30,
-            Y = 80 + (CurrentStrategy.Blocks.Count % 4) * 90
+            X = x,
+            Y = y
         };
 
         switch (typeStr)
@@ -781,6 +846,42 @@ public partial class MainWindowViewModel : ObservableObject
         CurrentStrategy.Blocks.Add(block);
         OnPropertyChanged(nameof(CurrentStrategy));
         StrategyStatusText = $"Block \"{block.Title}\" hinzugefuegt";
+    }
+
+    private (double X, double Y) FindNextStrategyBlockPosition()
+    {
+        const double startX = 260;
+        const double startY = 80;
+        const double grid = 20;
+        const double stepX = 220;
+        const double stepY = 100;
+        const double blockW = 190;
+        const double blockH = 74;
+        const double padding = 24;
+
+        static double Snap(double value, double gridSize) => Math.Round(value / gridSize) * gridSize;
+
+        bool Overlaps(double x, double y) =>
+            CurrentStrategy.Blocks.Any(b =>
+                x < b.X + blockW + padding &&
+                x + blockW + padding > b.X &&
+                y < b.Y + blockH + padding &&
+                y + blockH + padding > b.Y);
+
+        for (int row = 0; row < 12; row++)
+        {
+            for (int col = 0; col < 8; col++)
+            {
+                var x = Snap(startX + col * stepX, grid);
+                var y = Snap(startY + row * stepY, grid);
+                if (!Overlaps(x, y))
+                    return (x, y);
+            }
+        }
+
+        var fallbackX = Snap(startX + (CurrentStrategy.Blocks.Count % 6) * stepX, grid);
+        var fallbackY = Snap(startY + (CurrentStrategy.Blocks.Count / 6) * stepY, grid);
+        return (fallbackX, fallbackY);
     }
 
     [RelayCommand]
@@ -835,6 +936,84 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task OptimizeStrategyAsync()
+    {
+        if (IsOptimizingStrategy || _allCoins.Count == 0)
+        {
+            if (_allCoins.Count == 0)
+                StrategyStatusText = "Bitte zuerst einen Scan durchfuehren.";
+            return;
+        }
+
+        var backtestCoins = _allCoins
+            .Where(c => c.OhlcData != null && c.OhlcData.Count >= 80 && c.CurrentPrice > 0)
+            .OrderByDescending(c => c.Volume24h)
+            .Take(12)
+            .ToList();
+
+        if (backtestCoins.Count < 2)
+        {
+            StrategyStatusText = "Zu wenig OHLC-Daten fuer die Optimierung.";
+            return;
+        }
+
+        IsOptimizingStrategy = true;
+        StrategyStatusText = $"Optimiere Strategien mit {backtestCoins.Count} Coins...";
+
+        try
+        {
+            var results = await Task.Run(() => RunStrategyOptimization(backtestCoins));
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                StrategyOptimizationResults.Clear();
+                foreach (var result in results)
+                    StrategyOptimizationResults.Add(result);
+
+                if (results.Count > 0)
+                {
+                    var best = results[0];
+                    StrategyStatusText = $"Optimierung fertig: {best.StrategyName} + {best.FilterPreset} ist aktuell am staerksten.";
+                    StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] Optimierung: bestes Setup {best.StrategyName} + {best.FilterPreset} ({best.ReturnFormatted})");
+                }
+                else
+                {
+                    StrategyStatusText = "Optimierung abgeschlossen, aber es wurden keine brauchbaren Varianten gefunden.";
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"[MainWindowViewModel] Strategy optimization failed: {ex}");
+            StrategyStatusText = $"Optimierung fehlgeschlagen: {ex.Message}";
+        }
+        finally
+        {
+            IsOptimizingStrategy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ApplyOptimizationResult(StrategyOptimizationResult? result)
+    {
+        if (result == null)
+            return;
+
+        var preset = StrategyPresets.All.FirstOrDefault(p => p.Name == result.StrategyName);
+        if (preset.Factory == null)
+        {
+            StrategyStatusText = "Optimierte Strategie konnte nicht geladen werden.";
+            return;
+        }
+
+        CurrentStrategy = preset.Factory();
+        SelectedStrategyFilterPreset = result.FilterPreset;
+        ApplyStrategyFilterPreset(result.FilterPreset);
+        StrategyStatusText = $"Optimierte Strategie geladen: {result.StrategyName} + {result.FilterPreset}";
+        StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] Optimierung uebernommen: {result.StrategyName} + {result.FilterPreset}");
+    }
+
+    [RelayCommand]
     private void ApplyStrategyToPaperPortfolio()
     {
         if (_allCoins.Count == 0)
@@ -874,6 +1053,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         OnPropertyChanged(nameof(Portfolio));
         PortfolioSnapshots = Portfolio.ValueHistory.ToList();
+        RefreshPortfolioPositions();
         OnPropertyChanged(nameof(CanEditStartingBalance));
         StrategyStatusText = $"Fake-Depot aktualisiert: {executed}/{orders.Count} Strategie-Trades ausgefuehrt";
     }
@@ -887,6 +1067,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(Portfolio));
             PortfolioSnapshots = Portfolio.ValueHistory.ToList();
+            RefreshPortfolioPositions();
             StrategyLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {order.ActionText} {order.Symbol}: {message}");
             StrategyResults.Remove(order);
         }
@@ -904,6 +1085,30 @@ public partial class MainWindowViewModel : ObservableObject
     {
         var orders = _strategyService.Execute(CurrentStrategy, _allCoins, Portfolio);
 
+        return ApplyStrategyFilters(orders, _allCoins, Portfolio, CaptureCurrentStrategyFilterSettings());
+    }
+
+    private record StrategyFilterSettings(
+        bool RequirePositiveDayChange,
+        bool RequireAboveSma50,
+        bool RequirePositiveMacd,
+        bool PreferTopScoreBuys,
+        bool RequireMinScore40,
+        bool RequireAboveAverageVolume,
+        bool SkipExistingPositions);
+
+    private StrategyFilterSettings CaptureCurrentStrategyFilterSettings() =>
+        new(
+            StrategyRequirePositiveDayChange,
+            StrategyRequireAboveSma50,
+            StrategyRequirePositiveMacd,
+            StrategyPreferTopScoreBuys,
+            StrategyRequireMinScore40,
+            StrategyRequireAboveAverageVolume,
+            StrategySkipExistingPositions);
+
+    private List<TradeOrder> ApplyStrategyFilters(List<TradeOrder> orders, List<CryptoCoin> coins, Portfolio portfolio, StrategyFilterSettings settings)
+    {
         // Apply optional quality filters before showing or executing strategy trades.
         if (orders.Count == 0)
             return orders;
@@ -922,41 +1127,429 @@ public partial class MainWindowViewModel : ObservableObject
             if (order.Action != TradeAction.Buy)
                 continue;
 
-            var coin = _allCoins.FirstOrDefault(c => c.DisplayName == order.Symbol);
+            var coin = coins.FirstOrDefault(c => c.DisplayName == order.Symbol);
             if (coin?.Indicators == null)
                 continue;
 
-            if (StrategyRequirePositiveDayChange && coin.Change24hPercent <= 0)
+            if (settings.RequirePositiveDayChange && coin.Change24hPercent <= 0)
                 continue;
 
-            if (StrategyRequireAboveSma50 && coin.CurrentPrice <= coin.Indicators.Sma50)
+            if (settings.RequireAboveSma50 && coin.CurrentPrice <= coin.Indicators.Sma50)
                 continue;
 
-            if (StrategyRequirePositiveMacd && coin.Indicators.MacdHistogram <= 0)
+            if (settings.RequirePositiveMacd && coin.Indicators.MacdHistogram <= 0)
                 continue;
 
-            if (StrategyRequireMinScore40 && coin.CompositeScore < 40)
+            if (settings.RequireMinScore40 && coin.CompositeScore < 40)
                 continue;
 
-            if (StrategyRequireAboveAverageVolume && !coin.Indicators.IsVolumeAboveAverage)
+            if (settings.RequireAboveAverageVolume && !coin.Indicators.IsVolumeAboveAverage)
                 continue;
 
-            if (StrategySkipExistingPositions &&
-                Portfolio.Positions.Any(p => p.Symbol == coin.DisplayName && p.Amount > 0))
+            if (settings.SkipExistingPositions &&
+                portfolio.Positions.Any(p => p.Symbol == coin.DisplayName && p.Amount > 0))
                 continue;
 
             buyOrders.Add(order);
         }
 
-        if (StrategyPreferTopScoreBuys)
+        if (settings.PreferTopScoreBuys)
         {
             buyOrders = buyOrders
-                .OrderByDescending(o => _allCoins.FirstOrDefault(c => c.DisplayName == o.Symbol)?.CompositeScore ?? int.MinValue)
+                .OrderByDescending(o => coins.FirstOrDefault(c => c.DisplayName == o.Symbol)?.CompositeScore ?? int.MinValue)
                 .Take(3)
                 .ToList();
         }
 
         return sellOrders.Concat(buyOrders).ToList();
+    }
+
+    private List<StrategyOptimizationResult> RunStrategyOptimization(List<CryptoCoin> sourceCoins)
+    {
+        var filterPresets = new[]
+        {
+            "Aggressiv",
+            "Ausgewogen",
+            "Konservativ"
+        };
+
+        var candidates = new List<StrategyOptimizationResult>();
+        foreach (var (name, factory) in StrategyPresets.All)
+        {
+            foreach (var filterPreset in filterPresets)
+            {
+                var settings = GetFilterSettingsForPreset(filterPreset);
+                var result = BacktestStrategy(factory(), name, filterPreset, settings, sourceCoins);
+                if (result != null)
+                    candidates.Add(result);
+            }
+        }
+
+        return candidates
+            .OrderByDescending(r => r.ReturnPercent)
+            .ThenBy(r => r.MaxDrawdownPercent)
+            .ThenByDescending(r => r.WinRatePercent)
+            .Take(5)
+            .ToList();
+    }
+
+    private StrategyFilterSettings GetFilterSettingsForPreset(string preset) => preset switch
+    {
+        "Konservativ" => new(true, true, true, true, true, true, true),
+        "Aggressiv" => new(false, false, false, false, false, false, false),
+        _ => new(true, true, true, true, true, false, true)
+    };
+
+    private StrategyOptimizationResult? BacktestStrategy(
+        TradingStrategy strategy,
+        string strategyName,
+        string filterPreset,
+        StrategyFilterSettings settings,
+        List<CryptoCoin> sourceCoins)
+    {
+        var candidates = sourceCoins
+            .Where(c => c.OhlcData != null && c.OhlcData.Count >= 80)
+            .ToList();
+
+        if (candidates.Count < 2)
+            return null;
+
+        var minLength = candidates.Min(c => c.OhlcData!.Count);
+        if (minLength < 80)
+            return null;
+
+        var initialBalance = Portfolio.InitialBalance > 0 ? Portfolio.InitialBalance : 10000m;
+        var simPortfolio = new Portfolio
+        {
+            Balance = initialBalance,
+            InitialBalance = initialBalance,
+            Currency = Portfolio.Currency,
+            CreatedAt = DateTime.Now
+        };
+
+        decimal peakValue = initialBalance;
+        decimal maxDrawdown = 0m;
+        int sells = 0;
+        int winningSells = 0;
+
+        for (int step = 60; step < minLength - 1; step += 4)
+        {
+            var simCoins = BuildBacktestCoins(candidates, step);
+            if (simCoins.Count < 2)
+                continue;
+
+            UpdateSimPortfolioPrices(simPortfolio, simCoins);
+            var rawOrders = _strategyService.Execute(strategy, simCoins, simPortfolio);
+            var filteredOrders = ApplyStrategyFilters(rawOrders, simCoins, simPortfolio, settings);
+            ExecuteBacktestOrders(simPortfolio, filteredOrders, ref sells, ref winningSells);
+
+            UpdateSimPortfolioPrices(simPortfolio, simCoins);
+            var totalValue = simPortfolio.TotalValue;
+            if (totalValue > peakValue)
+                peakValue = totalValue;
+
+            if (peakValue > 0)
+            {
+                var drawdown = (peakValue - totalValue) / peakValue * 100m;
+                if (drawdown > maxDrawdown)
+                    maxDrawdown = drawdown;
+            }
+        }
+
+        var finalCoins = BuildBacktestCoins(candidates, minLength - 1);
+        UpdateSimPortfolioPrices(simPortfolio, finalCoins);
+        var finalValue = simPortfolio.TotalValue;
+        var tradeCount = simPortfolio.TransactionHistory.Count;
+        if (tradeCount == 0)
+            return null;
+
+        return new StrategyOptimizationResult
+        {
+            StrategyName = strategyName,
+            FilterPreset = filterPreset,
+            FinalValue = finalValue,
+            ReturnPercent = initialBalance > 0 ? ((finalValue - initialBalance) / initialBalance) * 100m : 0,
+            MaxDrawdownPercent = maxDrawdown,
+            Trades = tradeCount,
+            WinRatePercent = sells > 0 ? winningSells * 100m / sells : 0
+        };
+    }
+
+    private List<CryptoCoin> BuildBacktestCoins(List<CryptoCoin> candidates, int step)
+    {
+        var list = new List<CryptoCoin>();
+        foreach (var coin in candidates)
+        {
+            var candles = coin.OhlcData;
+            if (candles == null || candles.Count <= step)
+                continue;
+
+            var slice = candles.Take(step + 1).ToList();
+            if (slice.Count < 60)
+                continue;
+
+            var currentPrice = slice[^1].Close;
+            var indicators = _technicalAnalysis.Calculate(slice, currentPrice);
+            var (score, signal) = _scoringService.CalculateScore(indicators);
+            var referenceIndex = Math.Max(0, slice.Count - 25);
+            var referencePrice = slice[referenceIndex].Close;
+            var change24h = referencePrice > 0 ? ((currentPrice - referencePrice) / referencePrice) * 100m : 0;
+
+            list.Add(new CryptoCoin
+            {
+                PairName = coin.PairName,
+                DisplayName = coin.DisplayName,
+                BaseCurrency = coin.BaseCurrency,
+                QuoteCurrency = coin.QuoteCurrency,
+                CurrencySymbol = coin.CurrencySymbol,
+                CurrentPrice = currentPrice,
+                Change24hPercent = change24h,
+                Volume24h = slice.TakeLast(Math.Min(24, slice.Count)).Sum(c => c.Volume),
+                Indicators = indicators,
+                CompositeScore = score,
+                Signal = signal
+            });
+        }
+
+        return list;
+    }
+
+    private void UpdateSimPortfolioPrices(Portfolio portfolio, List<CryptoCoin> coins)
+    {
+        foreach (var position in portfolio.Positions)
+        {
+            var coin = coins.FirstOrDefault(c => c.DisplayName == position.Symbol);
+            if (coin != null)
+                position.CurrentPrice = coin.CurrentPrice;
+        }
+
+        portfolio.RefreshComputedProperties();
+    }
+
+    private void ExecuteBacktestOrders(Portfolio portfolio, List<TradeOrder> orders, ref int sells, ref int winningSells)
+    {
+        foreach (var order in orders)
+        {
+            if (order.Action == TradeAction.Buy)
+            {
+                ExecuteBacktestBuy(portfolio, order);
+            }
+            else if (order.Action == TradeAction.Sell)
+            {
+                var wasWin = ExecuteBacktestSell(portfolio, order);
+                if (wasWin.HasValue)
+                {
+                    sells++;
+                    if (wasWin.Value)
+                        winningSells++;
+                }
+            }
+        }
+    }
+
+    private void ExecuteBacktestBuy(Portfolio portfolio, TradeOrder order)
+    {
+        if (order.Amount <= 0 || order.CurrentPrice <= 0)
+            return;
+
+        var grossCost = order.Amount * order.CurrentPrice;
+        var fee = grossCost * _portfolioService.TradingFeeRate;
+        var totalCost = grossCost + fee;
+        if (totalCost > portfolio.Balance)
+            return;
+
+        portfolio.Balance -= totalCost;
+        var effectiveUnitCost = totalCost / order.Amount;
+        var position = portfolio.Positions.FirstOrDefault(p => p.Symbol == order.Symbol);
+        if (position == null)
+        {
+            portfolio.Positions.Add(new PortfolioPosition
+            {
+                Symbol = order.Symbol,
+                DisplayName = order.Symbol,
+                Amount = order.Amount,
+                AverageBuyPrice = effectiveUnitCost,
+                CurrentPrice = order.CurrentPrice
+            });
+        }
+        else
+        {
+            var totalAmount = position.Amount + order.Amount;
+            position.AverageBuyPrice = (position.Amount * position.AverageBuyPrice + order.Amount * effectiveUnitCost) / totalAmount;
+            position.Amount = totalAmount;
+            position.CurrentPrice = order.CurrentPrice;
+        }
+
+        portfolio.TransactionHistory.Add(new Transaction
+        {
+            Timestamp = DateTime.Now,
+            Symbol = order.Symbol,
+            Type = TransactionType.Kauf,
+            Amount = order.Amount,
+            PricePerUnit = order.CurrentPrice,
+            Fee = fee,
+            TotalCost = totalCost,
+            Source = "Backtest"
+        });
+        portfolio.RefreshComputedProperties();
+    }
+
+    private bool? ExecuteBacktestSell(Portfolio portfolio, TradeOrder order)
+    {
+        var position = portfolio.Positions.FirstOrDefault(p => p.Symbol == order.Symbol);
+        if (position == null || order.Amount <= 0 || order.Amount > position.Amount)
+            return null;
+
+        var grossRevenue = order.Amount * order.CurrentPrice;
+        var fee = grossRevenue * _portfolioService.TradingFeeRate;
+        var totalRevenue = grossRevenue - fee;
+        var costBasis = order.Amount * position.AverageBuyPrice;
+        portfolio.Balance += totalRevenue;
+        position.Amount -= order.Amount;
+        position.CurrentPrice = order.CurrentPrice;
+
+        if (position.Amount <= 0.000000001m)
+            portfolio.Positions.Remove(position);
+
+        portfolio.TransactionHistory.Add(new Transaction
+        {
+            Timestamp = DateTime.Now,
+            Symbol = order.Symbol,
+            Type = TransactionType.Verkauf,
+            Amount = order.Amount,
+            PricePerUnit = order.CurrentPrice,
+            Fee = fee,
+            TotalCost = totalRevenue,
+            Source = "Backtest"
+        });
+        portfolio.RefreshComputedProperties();
+        return totalRevenue > costBasis;
+    }
+
+    private void RefreshPortfolioPositions()
+    {
+        var sorted = (SelectedPortfolioSort ?? "G/V %") switch
+        {
+            "Coin" => PortfolioSortAscending
+                ? Portfolio.Positions.OrderBy(p => p.Symbol)
+                : Portfolio.Positions.OrderByDescending(p => p.Symbol),
+            "Menge" => PortfolioSortAscending
+                ? Portfolio.Positions.OrderBy(p => p.Amount)
+                : Portfolio.Positions.OrderByDescending(p => p.Amount),
+            "Wert" => PortfolioSortAscending
+                ? Portfolio.Positions.OrderBy(p => p.TotalValue)
+                : Portfolio.Positions.OrderByDescending(p => p.TotalValue),
+            "Investiert" => PortfolioSortAscending
+                ? Portfolio.Positions.OrderBy(p => p.TotalCost)
+                : Portfolio.Positions.OrderByDescending(p => p.TotalCost),
+            "G/V" => PortfolioSortAscending
+                ? Portfolio.Positions.OrderBy(p => p.ProfitLoss)
+                : Portfolio.Positions.OrderByDescending(p => p.ProfitLoss),
+            _ => PortfolioSortAscending
+                ? Portfolio.Positions.OrderBy(p => p.ProfitLossPercent)
+                : Portfolio.Positions.OrderByDescending(p => p.ProfitLossPercent)
+        };
+
+        SortedPortfolioPositions.Clear();
+        foreach (var position in sorted)
+            SortedPortfolioPositions.Add(position);
+    }
+
+    [RelayCommand]
+    private void TogglePortfolioSortDirection() => PortfolioSortAscending = !PortfolioSortAscending;
+
+    public void ExportPortfolioPdf(string path)
+    {
+        var lines = new List<string>
+        {
+            "CryptoScanner Depotliste",
+            $"Datum: {DateTime.Now:dd.MM.yyyy HH:mm}",
+            $"Barguthaben: {Portfolio.BalanceFormatted}",
+            $"Gesamtwert: {Portfolio.TotalValueFormatted}",
+            $"Gewinn/Verlust: {Portfolio.ProfitLossFormatted} ({Portfolio.ProfitLossPercentFormatted})",
+            ""
+        };
+
+        if (SortedPortfolioPositions.Count == 0)
+        {
+            lines.Add("Keine Positionen vorhanden.");
+        }
+        else
+        {
+            lines.Add("COIN | MENGE | INVESTIERT | WERT | G/V");
+            foreach (var position in SortedPortfolioPositions)
+            {
+                lines.Add($"{position.Symbol} | {position.AmountFormatted} | {position.TotalCost:N2} | {position.TotalValueFormatted} | {position.ProfitLossPercentFormatted}");
+            }
+        }
+
+        WriteSimplePdf(path, lines);
+        StatusText = $"Depotliste als PDF exportiert: {path}";
+    }
+
+    private static void WriteSimplePdf(string path, List<string> lines)
+    {
+        const int linesPerPage = 40;
+        var pages = lines.Chunk(linesPerPage).Select(chunk => chunk.ToList()).ToList();
+        var objects = new List<string>();
+        var pageNumbers = new List<int>();
+
+        objects.Add("<< /Type /Catalog /Pages 2 0 R >>");
+        objects.Add(string.Empty);
+        objects.Add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+
+        foreach (var page in pages)
+        {
+            var content = BuildPdfTextStream(page);
+            objects.Add($"<< /Length {content.Length} >>\nstream\n{content}\nendstream");
+            var contentNumber = objects.Count;
+            objects.Add($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents {contentNumber} 0 R >>");
+            pageNumbers.Add(objects.Count);
+        }
+
+        objects[1] = $"<< /Type /Pages /Count {pageNumbers.Count} /Kids [ {string.Join(" ", pageNumbers.Select(n => $"{n} 0 R"))} ] >>";
+
+        using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        using var writer = new StreamWriter(stream, System.Text.Encoding.ASCII);
+        writer.WriteLine("%PDF-1.4");
+
+        var offsets = new List<long> { 0 };
+        for (int i = 0; i < objects.Count; i++)
+        {
+            writer.Flush();
+            offsets.Add(stream.Position);
+            writer.WriteLine($"{i + 1} 0 obj");
+            writer.WriteLine(objects[i]);
+            writer.WriteLine("endobj");
+        }
+
+        writer.Flush();
+        var xrefPos = stream.Position;
+        writer.WriteLine($"xref\n0 {objects.Count + 1}");
+        writer.WriteLine("0000000000 65535 f ");
+        for (int i = 1; i < offsets.Count; i++)
+            writer.WriteLine($"{offsets[i]:D10} 00000 n ");
+        writer.WriteLine("trailer");
+        writer.WriteLine($"<< /Size {objects.Count + 1} /Root 1 0 R >>");
+        writer.WriteLine("startxref");
+        writer.WriteLine(xrefPos);
+        writer.WriteLine("%%EOF");
+    }
+
+    private static string BuildPdfTextStream(List<string> lines)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("BT");
+        sb.AppendLine("/F1 11 Tf");
+        sb.AppendLine("50 790 Td");
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
+            sb.AppendLine($"({line}) Tj");
+            sb.AppendLine("0 -18 Td");
+        }
+        sb.AppendLine("ET");
+        return sb.ToString();
     }
 
     private void ApplyStrategyFilterPreset(string? preset)
@@ -1000,5 +1593,57 @@ public partial class MainWindowViewModel : ObservableObject
         CurrentStrategy.Name = "Neue Strategie";
         StrategyResults.Clear();
         StrategyStatusText = "Neue Strategie erstellt (RSI Momentum Vorlage)";
+    }
+
+    public void OpenStrategyBlockEditor(StrategyBlock block)
+    {
+        EditingStrategyBlock = block;
+        StrategyBlockEditorOperator = block.Operator;
+        StrategyBlockEditorValue = block.Value.ToString("N0");
+        StrategyBlockEditorActionAmount = block.ActionAmount;
+        StrategyBlockEditorConditionPreset = block.ConditionPreset;
+        StrategyBlockEditorAlarmText = block.AlarmText;
+        ShowStrategyBlockEditor = true;
+    }
+
+    [RelayCommand]
+    private void SaveStrategyBlockEditor()
+    {
+        var block = EditingStrategyBlock;
+        if (block == null)
+            return;
+
+        if (block.Type == BlockType.Condition)
+        {
+            block.Operator = StrategyBlockEditorOperator;
+            block.ConditionPreset = StrategyBlockEditorConditionPreset?.Trim() ?? "";
+            if (double.TryParse(StrategyBlockEditorValue?.Replace(",", "."),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var value))
+            {
+                block.Value = value;
+            }
+        }
+        else if (block.Type == BlockType.ActionBuy || block.Type == BlockType.ActionSell)
+        {
+            var amount = (StrategyBlockEditorActionAmount ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(amount))
+                block.ActionAmount = amount;
+        }
+        else if (block.Type == BlockType.ActionAlarm)
+        {
+            block.AlarmText = StrategyBlockEditorAlarmText?.Trim() ?? "";
+        }
+
+        ShowStrategyBlockEditor = false;
+        StrategyStatusText = $"Block \"{block.Title}\" aktualisiert";
+        OnPropertyChanged(nameof(CurrentStrategy));
+    }
+
+    [RelayCommand]
+    private void CancelStrategyBlockEditor()
+    {
+        ShowStrategyBlockEditor = false;
+        EditingStrategyBlock = null;
     }
 }

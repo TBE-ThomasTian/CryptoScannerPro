@@ -60,14 +60,7 @@ public partial class CryptoCoin : ObservableObject
     {
         get
         {
-            var num = CurrentPrice switch
-            {
-                >= 1000 => CurrentPrice.ToString("N2"),
-                >= 1 => CurrentPrice.ToString("N4"),
-                >= 0.01m => CurrentPrice.ToString("N6"),
-                _ => CurrentPrice.ToString("N8")
-            };
-            return $"{CurrencySymbol}{num}";
+            return FormatPrice(CurrentPrice);
         }
     }
 
@@ -92,4 +85,67 @@ public partial class CryptoCoin : ObservableObject
     public string Change24hColor => Change24hPercent >= 0 ? "#00D4AA" : "#FF4757";
 
     public string ScoreFormatted => $"{(CompositeScore >= 0 ? "+" : "")}{CompositeScore}";
+
+    public string BuyZoneText
+    {
+        get
+        {
+            if (CurrentPrice <= 0)
+                return "-";
+
+            if (Signal == SignalType.Verkauf || Signal == SignalType.StarkerVerkauf)
+                return "Nicht kaufen";
+
+            var supports = new List<decimal> { CurrentPrice * 0.98m };
+            if (Indicators?.Sma20 > 0) supports.Add(Indicators.Sma20);
+            if (Indicators?.BollingerLower > 0) supports.Add(Indicators.BollingerLower);
+
+            var valid = supports.Where(v => v > 0).ToList();
+            if (valid.Count == 0)
+                return FormatPrice(CurrentPrice);
+
+            var zoneLow = valid.Min();
+            var zoneHigh = Math.Min(CurrentPrice, valid.Max());
+
+            if (Signal == SignalType.StarkerKauf && zoneHigh >= CurrentPrice * 0.995m)
+                return $"Jetzt ({FormatPrice(CurrentPrice)})";
+
+            if (Signal == SignalType.Kauf || Signal == SignalType.StarkerKauf)
+                return $"{FormatPrice(zoneLow)} - {FormatPrice(zoneHigh)}";
+
+            return $"Unter {FormatPrice(zoneHigh)}";
+        }
+    }
+
+    public string BuyZoneColor => Signal switch
+    {
+        SignalType.StarkerKauf => "#00D4AA",
+        SignalType.Kauf => "#4AEDC4",
+        SignalType.Halten => "#F0B90B",
+        _ => "#8B949E"
+    };
+
+    partial void OnCurrentPriceChanged(decimal value) => NotifyDerivedProperties();
+    partial void OnCurrencySymbolChanged(string value) => NotifyDerivedProperties();
+    partial void OnIndicatorsChanged(TechnicalIndicators? value) => NotifyDerivedProperties();
+    partial void OnSignalChanged(SignalType value) => NotifyDerivedProperties();
+
+    private void NotifyDerivedProperties()
+    {
+        OnPropertyChanged(nameof(PriceFormatted));
+        OnPropertyChanged(nameof(BuyZoneText));
+        OnPropertyChanged(nameof(BuyZoneColor));
+    }
+
+    private string FormatPrice(decimal price)
+    {
+        var num = price switch
+        {
+            >= 1000 => price.ToString("N2"),
+            >= 1 => price.ToString("N4"),
+            >= 0.01m => price.ToString("N6"),
+            _ => price.ToString("N8")
+        };
+        return $"{CurrencySymbol}{num}";
+    }
 }

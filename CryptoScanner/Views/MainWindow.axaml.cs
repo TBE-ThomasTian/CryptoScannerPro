@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using CryptoScanner.ViewModels;
 
 namespace CryptoScanner.Views;
@@ -18,10 +19,42 @@ public partial class MainWindow : Window
         var editor = this.FindControl<StrategyEditorControl>("StrategyEditor");
         var fitBtn = this.FindControl<Button>("FitToViewBtn");
         var delBtn = this.FindControl<Button>("DeleteBlockBtn");
+        var portfolioChart = this.FindControl<PortfolioChartControl>("PortfolioChart");
+        var resetPortfolioChartBtn = this.FindControl<Button>("ResetPortfolioChartBtn");
+        var exportPortfolioPdfBtn = this.FindControl<Button>("ExportPortfolioPdfBtn");
 
         // Wire "Zentrieren" button
         if (fitBtn != null && editor != null)
             fitBtn.Click += (_, _) => editor.FitToView();
+
+        if (editor != null && _vm != null)
+            editor.BlockDoubleClicked += block => _vm.OpenStrategyBlockEditor(block);
+
+        if (portfolioChart != null && resetPortfolioChartBtn != null)
+            resetPortfolioChartBtn.Click += (_, _) => portfolioChart.ResetView();
+
+        if (exportPortfolioPdfBtn != null && _vm != null)
+        {
+            exportPortfolioPdfBtn.Click += async (_, _) =>
+            {
+                var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+                {
+                    Title = "Depotliste als PDF speichern",
+                    SuggestedFileName = $"CryptoScanner-Depot-{DateTime.Now:yyyyMMdd-HHmmss}.pdf",
+                    DefaultExtension = "pdf",
+                    FileTypeChoices = new[]
+                    {
+                        new FilePickerFileType("PDF-Datei")
+                        {
+                            Patterns = new[] { "*.pdf" }
+                        }
+                    }
+                });
+
+                if (file != null)
+                    _vm.ExportPortfolioPdf(file.Path.LocalPath);
+            };
+        }
 
         // Wire "Loeschen" button — deletes the selected block
         if (delBtn != null && editor != null)

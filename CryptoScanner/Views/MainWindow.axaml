@@ -215,6 +215,16 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="KAUFZONE" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding BuyZoneText}"
+                                                   Foreground="{Binding BuyZoneColor, Converter={StaticResource HexToBrush}}"
+                                                   FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" Margin="8,0"
+                                                   ToolTip.Tip="Schaetzt aus aktuellem Kurs, SMA20 und Bollinger-Band eine sinnvolle Kaufzone."/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTemplateColumn Header="MEINE STRATEGIE" Width="170">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -444,28 +454,52 @@
                                              Watermark="z.B. 10000"
                                              ToolTip.Tip="Startkapital fuer dein Paper-Trading-Depot"/>
                                 </StackPanel>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Gebuehr %" FontSize="11" Foreground="#8B949E" ToolTip.Tip="Eigene Handelsgebuehr fuer das Fake-Depot, z.B. 0,26 fuer 0,26%"/>
+                                    <TextBox Text="{Binding PortfolioFeeRateInput}" Width="90" Height="32"
+                                             Watermark="0,26"
+                                             ToolTip.Tip="Prozentuale Gebuehr pro Kauf und Verkauf im Fake-Depot"/>
+                                </StackPanel>
                                 <Button Content="Depot Zuruecksetzen" Padding="12,6" FontSize="11"
                                         Command="{Binding ResetPortfolioCommand}" VerticalAlignment="Bottom" Margin="0,0,0,1"
                                         ToolTip.Tip="Alle Positionen und Transaktionen loeschen und mit neuem Startkapital beginnen"/>
                                 <TextBlock Text="Setzt alle Positionen und Transaktionen zurueck."
                                            FontSize="10" Foreground="#484F58" VerticalAlignment="Bottom" Margin="6,0,0,4"/>
                             </StackPanel>
+                            <TextBlock Text="{Binding PortfolioFeeInfo}" FontSize="11" Foreground="#8B949E"
+                                       ToolTip.Tip="Im Fake-Depot wird pro Kauf und Verkauf eine Kraken-aehnliche Handelsgebuehr berechnet."/>
                         </StackPanel>
                     </Border>
 
                     <!-- Portfolio Chart -->
-                    <TextBlock Text="Depot-Entwicklung" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                        <TextBlock Text="Depot-Entwicklung" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" x:Name="ResetPortfolioChartBtn" Content="Reset Ansicht" Padding="10,5" FontSize="10"
+                                ToolTip.Tip="Setzt Zoom und Verschiebung des Depot-Diagramms zurueck"/>
+                    </Grid>
                     <Border Background="#161B22" CornerRadius="10" Padding="8" BorderBrush="#21262D" BorderThickness="1" Height="250">
-                        <views:PortfolioChartControl
+                        <views:PortfolioChartControl x:Name="PortfolioChart"
                             Snapshots="{Binding PortfolioSnapshots}"
                             InitialBalance="{Binding Portfolio.InitialBalance}"
                             CurrencySymbol="{Binding Portfolio.CurrencySymbol}"/>
                     </Border>
+                    <TextBlock Text="Mausrad = Zoom, Ziehen = links/rechts scrollen, Doppelklick = Reset"
+                               FontSize="10" Foreground="#8B949E"/>
 
                     <!-- Positions -->
-                    <TextBlock Text="Positionen" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" VerticalAlignment="Center">
+                        <TextBlock Text="Positionen" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="Sortieren:" Margin="16,0,6,0" FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" ItemsSource="{Binding PortfolioSortOptions}" SelectedItem="{Binding SelectedPortfolioSort}" Width="120"
+                                  ToolTip.Tip="Sortiert die Depot-Positionen, z. B. nach G/V oder investiertem Betrag"/>
+                        <Button Grid.Column="3" Content="A/Z" Padding="8,5" FontSize="10" Margin="8,0,0,0" HorizontalAlignment="Left"
+                                Command="{Binding TogglePortfolioSortDirectionCommand}"
+                                ToolTip.Tip="Sortierrichtung umkehren"/>
+                        <Button Grid.Column="4" x:Name="ExportPortfolioPdfBtn" Content="Als PDF" Padding="10,5" FontSize="10"
+                                ToolTip.Tip="Oeffnet ein Speichern-unter-Fenster fuer die aktuelle Depotliste als PDF"/>
+                    </Grid>
                     <Border Background="#161B22" CornerRadius="10" Padding="4" BorderBrush="#21262D" BorderThickness="1">
-                        <DataGrid ItemsSource="{Binding Portfolio.Positions}" AutoGenerateColumns="False"
+                        <DataGrid ItemsSource="{Binding SortedPortfolioPositions}" AutoGenerateColumns="False"
                                   IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
                                   Background="#161B22" HeadersVisibility="Column" SelectionMode="Single" MaxHeight="300">
                             <DataGrid.Columns>
@@ -473,6 +507,7 @@
                                 <DataGridTextColumn Header="MENGE" Binding="{Binding AmountFormatted}" Width="120"/>
                                 <DataGridTextColumn Header="KAUFPREIS" Binding="{Binding AvgPriceFormatted}" Width="120"/>
                                 <DataGridTextColumn Header="KURS" Binding="{Binding CurrentPriceFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="INVESTIERT" Binding="{Binding TotalCost, StringFormat={}{0:N2}}" Width="120"/>
                                 <DataGridTextColumn Header="WERT" Binding="{Binding TotalValueFormatted}" Width="120"/>
                                 <DataGridTemplateColumn Header="G/V" Width="120">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -519,6 +554,7 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="MENGE" Binding="{Binding AmountFormatted}" Width="120"/>
                                 <DataGridTextColumn Header="PREIS" Binding="{Binding PriceFormatted}" Width="120"/>
+                                <DataGridTextColumn Header="GEBUEHR" Binding="{Binding FeeFormatted}" Width="110"/>
                                 <DataGridTextColumn Header="GESAMT" Binding="{Binding TotalFormatted}" Width="120"/>
                                 <DataGridTextColumn Header="QUELLE" Binding="{Binding Source}" Width="100"/>
                             </DataGrid.Columns>
@@ -649,6 +685,8 @@
                         <Button Classes="accent" Content="Speichern" Padding="8,4" FontSize="10" Command="{Binding SaveStrategyCommand}" ToolTip.Tip="Aktuelle Strategie als JSON speichern"/>
                         <Button Content="Neu" Padding="8,4" FontSize="10" Command="{Binding NewStrategyCommand}" ToolTip.Tip="Neue Strategie mit RSI-Momentum-Vorlage erstellen"/>
                         <Button Classes="accent" Content="Testen" Padding="8,4" FontSize="10" Command="{Binding TestStrategyCommand}" ToolTip.Tip="Strategie gegen aktuelle Scan-Daten testen (kein echter Handel)"/>
+                        <Button Content="Optimieren" Padding="8,4" FontSize="10" Command="{Binding OptimizeStrategyCommand}" IsEnabled="{Binding IsOptimizingStrategy, Converter={StaticResource InverseBool}}"
+                                ToolTip.Tip="Testet mehrere Strategie-Vorlagen und Filter gegen historische Kerzen und zeigt die besten Varianten"/>
                         <Button Content="Zentrieren" Padding="8,4" FontSize="10" x:Name="FitToViewBtn"
                                 ToolTip.Tip="Alle Bloecke in der Ansicht zentrieren und einpassen"/>
                         <Button Content="Loeschen" Padding="8,4" FontSize="10" Foreground="#FF4757" x:Name="DeleteBlockBtn"
@@ -703,6 +741,35 @@
                                               ToolTip.Tip="Kauft keine Coins nach, die bereits im Fake-Depot vorhanden sind"/>
                                     <CheckBox Content="Top 3 Score" IsChecked="{Binding StrategyPreferTopScoreBuys}" Foreground="#8B949E"
                                               ToolTip.Tip="Begrenzt Kaeufe auf die drei besten Coin-Kandidaten nach Score"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#0D1117" CornerRadius="10" Padding="12" BorderBrush="#21262D" BorderThickness="1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Optimierer" FontSize="13" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Sucht auf Basis deiner geladenen OHLC-Daten nach aktuell staerkeren Strategie-Varianten." FontSize="11" Foreground="#8B949E" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Nutze das als Vorschlag, nicht als vollautomatisches Lernen." FontSize="10" Foreground="#6E7681" TextWrapping="Wrap"/>
+                                    <DataGrid ItemsSource="{Binding StrategyOptimizationResults}" AutoGenerateColumns="False"
+                                              IsReadOnly="True" GridLinesVisibility="None" BorderThickness="0"
+                                              Background="#0D1117" HeadersVisibility="Column" MaxHeight="220">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="SETUP" Binding="{Binding Summary}" Width="*"/>
+                                            <DataGridTextColumn Header="RENDITE" Binding="{Binding ReturnFormatted}" Width="85"/>
+                                            <DataGridTextColumn Header="DD" Binding="{Binding DrawdownFormatted}" Width="70"/>
+                                            <DataGridTemplateColumn Header="" Width="70">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Padding="4,2" FontSize="9"
+                                                                Command="{Binding $parent[Window].DataContext.ApplyOptimizationResultCommand}"
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip.Tip="Laedt diese optimierte Strategie und ihre Filter in den Editor">
+                                                            <TextBlock Text="Uebern." FontSize="9"/>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -980,6 +1047,50 @@
                         <Button Classes="sell" Command="{Binding ExecuteSellCommand}" Padding="14,7"
                                 ToolTip.Tip="Fuehrt den Verkauf als Paper-Trade aus">
                             <TextBlock Text="Verkaufen" Foreground="White" FontWeight="SemiBold"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ═══ STRATEGY BLOCK EDITOR OVERLAY ═══ -->
+        <Border Grid.Row="2" IsVisible="{Binding ShowStrategyBlockEditor}"
+                Background="#80000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border Background="#161B22" CornerRadius="12" Padding="24" BorderBrush="#30363D" BorderThickness="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Width="430">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding StrategyBlockEditorTitle}" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
+                    <TextBlock Text="Hier kannst du die wichtigste Logik des Blocks direkt aendern."
+                               Foreground="#8B949E" FontSize="12" TextWrapping="Wrap"/>
+
+                    <StackPanel Spacing="8" IsVisible="{Binding IsEditingActionBlock}">
+                        <TextBlock Text="Prozent / Anteil" FontSize="12" Foreground="#8B949E"/>
+                        <TextBox Text="{Binding StrategyBlockEditorActionAmount}"
+                                 Watermark="z.B. 10% oder Alles"
+                                 ToolTip.Tip="Beispiele: 5%, 10%, 25%, 50%, 100% oder Alles"/>
+                        <TextBlock Text="Beispiele: 5%, 10%, 25%, 50%, 100% oder Alles"
+                                   FontSize="10" Foreground="#6E7681"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8" IsVisible="{Binding IsEditingConditionBlock}">
+                        <TextBlock Text="Operator" FontSize="12" Foreground="#8B949E"/>
+                        <TextBox Text="{Binding StrategyBlockEditorOperator}" Watermark="&gt;, &lt;, &gt;=, &lt;=, =="
+                                 ToolTip.Tip="Vergleichsoperator fuer die Bedingung"/>
+                        <TextBlock Text="Wert" FontSize="12" Foreground="#8B949E"/>
+                        <TextBox Text="{Binding StrategyBlockEditorValue}" Watermark="z.B. 30"/>
+                        <TextBlock Text="Preset (optional)" FontSize="12" Foreground="#8B949E"/>
+                        <TextBox Text="{Binding StrategyBlockEditorConditionPreset}" Watermark="z.B. Signal positiv"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8" IsVisible="{Binding IsEditingAlarmBlock}">
+                        <TextBlock Text="Alarmtext" FontSize="12" Foreground="#8B949E"/>
+                        <TextBox Text="{Binding StrategyBlockEditorAlarmText}" Watermark="Signal erkannt"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,8,0,0">
+                        <Button Content="Abbrechen" Command="{Binding CancelStrategyBlockEditorCommand}"/>
+                        <Button Classes="accent" Content="Speichern" Command="{Binding SaveStrategyBlockEditorCommand}">
+                            <TextBlock Text="Speichern" Foreground="#0D1117" FontWeight="SemiBold"/>
                         </Button>
                     </StackPanel>
                 </StackPanel>

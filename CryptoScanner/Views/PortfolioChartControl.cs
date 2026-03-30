@@ -21,6 +21,13 @@ public class PortfolioChartControl : Control
     public decimal InitialBalance { get => GetValue(InitialBalanceProperty); set => SetValue(InitialBalanceProperty, value); }
     public string CurrencySymbol { get => GetValue(CurrencySymbolProperty); set => SetValue(CurrencySymbolProperty, value); }
 
+    // Zoom/Pan state
+    private double _chartZoom = 1.0;
+    private int _chartOffset;
+    private bool _isDragging;
+    private double _dragStartX;
+    private int _dragStartOffset;
+
     // Crosshair state
     private double _mouseX, _mouseY;
     private bool _isMouseOver;
@@ -43,7 +50,60 @@ public class PortfolioChartControl : Control
 
     public PortfolioChartControl()
     {
+        Focusable = true;
         ClipToBounds = true;
+        Cursor = new Cursor(StandardCursorType.Hand);
+    }
+
+    public void ResetView()
+    {
+        _chartZoom = 1.0;
+        _chartOffset = 0;
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        var snapshots = Snapshots;
+        if (snapshots == null || snapshots.Count < 2) return;
+
+        var oldVisible = VisibleCount(snapshots.Count);
+        double delta = e.Delta.Y > 0 ? 1.08 : 0.93;
+        _chartZoom = Math.Clamp(_chartZoom * delta, 1.0, Math.Max(1.0, snapshots.Count / 12.0));
+        var newVisible = VisibleCount(snapshots.Count);
+
+        if (newVisible != oldVisible)
+        {
+            var ratio = snapshots.Count <= 1 ? 0 : (_mouseX - 4) / Math.Max(1, Bounds.Width - 74);
+            ratio = Math.Clamp(ratio, 0, 1);
+            var anchorIndex = _chartOffset + (int)Math.Round(ratio * Math.Max(0, oldVisible - 1));
+            _chartOffset = Math.Clamp(anchorIndex - (int)Math.Round(ratio * Math.Max(0, newVisible - 1)),
+                0, Math.Max(0, snapshots.Count - newVisible));
+        }
+
+        InvalidateVisual();
+        e.Handled = true;
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        var props = e.GetCurrentPoint(this).Properties;
+        if (!props.IsLeftButtonPressed)
+            return;
+
+        if (e.ClickCount >= 2)
+        {
+            ResetView();
+            e.Handled = true;
+            return;
+        }
+
+        _isDragging = true;
+        _dragStartX = e.GetPosition(this).X;
+        _dragStartOffset = _chartOffset;
+        e.Handled = true;
     }
 
     protected override void OnPointerEntered(PointerEventArgs e)
@@ -66,14 +126,34 @@ public class PortfolioChartControl : Control
         var pos = e.GetPosition(this);
         _mouseX = pos.X;
         _mouseY = pos.Y;
+        if (_isDragging)
+        {
+            var snapshots = Snapshots;
+            if (snapshots != null && snapshots.Count > 1)
+            {
+                var visible = VisibleCount(snapshots.Count);
+                var pixelsPerPoint = Math.Max(1, (Bounds.Width - 74) / Math.Max(1, visible));
+                var shift = (int)(-(pos.X - _dragStartX) / pixelsPerPoint);
+                _chartOffset = Math.Clamp(_dragStartOffset + shift, 0, Math.Max(0, snapshots.Count - visible));
+            }
+        }
+
         if (_isMouseOver) InvalidateVisual();
     }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        _isDragging = false;
+    }
+
+    private int VisibleCount(int total) => Math.Max(12, (int)(total / _chartZoom));
 
     public override void Render(DrawingContext ctx)
     {
         base.Render(ctx);
-        var snapshots = Snapshots;
-        if (snapshots == null || snapshots.Count < 2)
+        var allSnapshots = Snapshots;
+        if (allSnapshots == null || allSnapshots.Count < 2)
         {
             DrawEmptyState(ctx);
             return;
@@ -86,7 +166,18 @@ public class PortfolioChartControl : Control
         double cW = w - padL - padR, cH = h - padT - padB;
         if (cW < 10 || cH < 10) return;
 
+        int total = allSnapshots.Count;
+        int visible = VisibleCount(total);
+        int startIdx = Math.Clamp(_chartOffset, 0, Math.Max(0, total - visible));
+        int endIdx = Math.Min(startIdx + visible, total);
+        var snapshots = allSnapshots.GetRange(startIdx, endIdx - startIdx);
         int n = snapshots.Count;
+        if (n < 2)
+        {
+            DrawEmptyState(ctx);
+            return;
+        }
+
         var values = snapshots.Select(s => (double)s.TotalValue).ToList();
         double initBal = (double)InitialBalance;
 
@@ -180,6 +271,14 @@ public class PortfolioChartControl : Control
             FlowDirection.LeftToRight, Typeface.Default, 10, new SolidColorBrush(lineColor));
         ctx.DrawLine(new Pen(new SolidColorBrush(lineColor), 2), new Point(padL + 6, padT + 10), new Point(padL + 18, padT + 10));
         ctx.DrawText(legendFt, new Point(padL + 22, padT + 3));
+
+        if (_chartZoom > 1.01)
+        {
+            var zoomText = new FormattedText($"Zoom {_chartZoom:N1}x  |  {n}/{total} Punkte",
+                System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight, Typeface.Default, 10, lblBr);
+            ctx.DrawText(zoomText, new Point(padL + 6, h - zoomText.Height - 4));
+        }
 
         // Crosshair
         if (_isMouseOver && _mouseX >= padL && _mouseX <= padL + cW && _mouseY >= padT && _mouseY <= padT + cH)

@@ -32,7 +32,7 @@ public partial class StrategyBlock : ObservableObject
 
     public string Description => Type switch
     {
-        BlockType.Start => "Einstiegspunkt",
+        BlockType.Start => "Einstiegspunkt (1 Ausgang)",
         BlockType.Condition when !string.IsNullOrEmpty(ConditionPreset) => ConditionPreset,
         BlockType.Condition => $"{Category} {Operator} {Value}",
         BlockType.ActionBuy => $"Kaufen: {ActionAmount}",

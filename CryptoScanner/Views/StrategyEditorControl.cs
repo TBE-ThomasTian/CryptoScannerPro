@@ -8,6 +8,8 @@ namespace CryptoScanner.Views;
 
 public class StrategyEditorControl : Control
 {
+    public event Action<StrategyBlock>? BlockDoubleClicked;
+
     public static readonly StyledProperty<TradingStrategy?> StrategyProperty =
         AvaloniaProperty.Register<StrategyEditorControl, TradingStrategy?>(nameof(Strategy));
 
@@ -45,6 +47,7 @@ public class StrategyEditorControl : Control
 
     const double BlockW = 190, BlockH = 74, PinR = 8, PinRHover = 11, TitleH = 26;
     const double ZoomMin = 0.25, ZoomMax = 3.0;
+    const double GridSnap = 20;
 
     static readonly Color BgColor = Color.Parse("#0F0F23");
     static readonly Color GridThin = Color.Parse("#1E1E3A");
@@ -119,6 +122,8 @@ public class StrategyEditorControl : Control
 
     private Point ScreenToCanvas(Point screen) =>
         new((screen.X - _panX) / _zoom, (screen.Y - _panY) / _zoom);
+
+    static double SnapToGrid(double value) => Math.Round(value / GridSnap) * GridSnap;
 
     static Point InPin(StrategyBlock b) => new(b.X - 2, b.Y + BlockH / 2);
     static Point OutPin(StrategyBlock b, string port)
@@ -232,6 +237,13 @@ public class StrategyEditorControl : Control
             if (block != null)
             {
                 SelectedBlockId = block.Id;
+                if (e.ClickCount >= 2)
+                {
+                    BlockDoubleClicked?.Invoke(block);
+                    InvalidateVisual();
+                    e.Handled = true;
+                    return;
+                }
                 _dragBlock = block;
                 _dragOffset = new Point(pos.X - block.X, pos.Y - block.Y);
                 InvalidateVisual();
@@ -262,8 +274,8 @@ public class StrategyEditorControl : Control
 
         if (_dragBlock != null)
         {
-            _dragBlock.X = pos.X - _dragOffset.X;
-            _dragBlock.Y = pos.Y - _dragOffset.Y;
+            _dragBlock.X = SnapToGrid(pos.X - _dragOffset.X);
+            _dragBlock.Y = SnapToGrid(pos.Y - _dragOffset.Y);
             InvalidateVisual();
         }
         else if (_isConnecting)
@@ -311,6 +323,11 @@ public class StrategyEditorControl : Control
                     break;
                 }
             }
+        }
+        if (_dragBlock != null)
+        {
+            _dragBlock.X = SnapToGrid(_dragBlock.X);
+            _dragBlock.Y = SnapToGrid(_dragBlock.Y);
         }
         _dragBlock = null; _isConnecting = false; _connectFrom = null;
         InvalidateVisual();
