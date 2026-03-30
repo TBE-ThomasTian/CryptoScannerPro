@@ -108,6 +108,6 @@ CryptoScanner/
 
 ## License
 
-DE: Das Projekt ist aktuell fuer private Nutzung und Weiterentwicklung gedacht.
+DE: Dieses Projekt steht unter der MIT-Lizenz.
 
-EN: The project is currently intended for private use and further development.
+EN: This project is licensed under the MIT License.
